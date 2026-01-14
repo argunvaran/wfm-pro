@@ -19,7 +19,7 @@ git pull origin master
 # Let's assume safely we might need to rebuild if requirements changed, but 
 # 'docker-compose up -d --build' does that safely without losing volumes.
 echo "--> 2. Rebuilding services (Safe mode)..."
-docker-compose up -d --build web worker celery
+docker-compose up -d --build web worker
 
 # 3. Create Migrations (Since we added fields)
 echo "--> 3. Creating Database Migrations..."

@@ -159,8 +159,7 @@ def payment_callback(request):
             except Exception as e:
                 return render(request, 'payment_success.html', {'status': 'failure', 'error': str(e)})
                 
-            except Exception as e:
-                return render(request, 'payment_success.html', {'status': 'failure', 'error': str(e)})
+
 
         else:
             return render(request, 'payment_success.html', {'status': 'failure', 'error': f"Payment Failed: {res_json}"})

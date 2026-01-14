@@ -15,8 +15,9 @@ try:
         tenant = Client(schema_name='public', name='Public Tenant', paid_until=None, is_active=True)
         tenant.save()
         
+        domain_name = os.getenv('DOMAIN_NAME', 'localhost')
         domain = Domain()
-        domain.domain = 'localhost' # Public domain
+        domain.domain = domain_name
         domain.tenant = tenant
         domain.is_primary = True
         domain.save()

@@ -7,10 +7,17 @@ from imports.views import import_data
 from agents.views import agent_list, settings_view, create_team, create_skill, create_queue
 from users.views import CustomLoginView, test_signup
 from calls.api import EventPushViewSet, IntegrationConfigViewSet
-from mobile.api import MobileShiftViewSet # Example reuse if needed
+from mobile.api import MobileShiftViewSet
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import render
 from rest_framework.routers import DefaultRouter
+
+def privacy_view(request):
+    return render(request, 'privacy_policy.html')
+
+def terms_view(request):
+    return render(request, 'terms.html')
 
 router = DefaultRouter()
 router.register(r'event/push', EventPushViewSet, basename='event-push')

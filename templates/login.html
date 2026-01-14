@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="card p-4">
+            <h3 class="text-center mb-4">Giriş Yap</h3>
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary w-100 mt-3">Giriş</button>
+            </form>
+            <hr>
+            <div class="text-center">
+                <p class="mb-2">Yeni Müşteri misiniz?</p>
+                <a href="{% url 'pricing' %}" class="btn btn-success w-100 mb-2">Paketleri İncele & Kayıt Ol</a>
+
+                <hr class="my-3">
+
+                <p class="mb-2 small text-muted">Mevcut Müşteri Girişi</p>
+                <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon3">https://</span>
+                    <input type="text" class="form-control" id="tenantInput" placeholder="şirketadı"
+                        aria-describedby="basic-addon3">
+                    <span class="input-group-text">.localhost:8000</span>
+                </div>
+                <button onclick="goToTenant()" class="btn btn-outline-light w-100 btn-sm">Panele Git</button>
+            </div>
+
+            <script>
+                function goToTenant() {
+                    const tenant = document.getElementById('tenantInput').value;
+                    if (tenant) {
+                        window.location.href = `http://${tenant}.localhost:8000/login/`;
+                    }
+                }
+            </script>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="display-4 fw-bold mb-3">WFM Pro ile Operasyonunuzu Yönetin</h1>
+            <p class="lead text-muted mb-5">
+                Çağrı merkeziniz için en gelişmiş vardiya planlama ve tahminleme aracı.
+                Hemen bir plan seçin ve 5 dakika içinde kullanmaya başlayın.
+            </p>
+
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a href="/billing/pricing/" class="btn btn-primary btn-lg px-4 gap-3">Planları İncele</a>
+                <a href="#features" class="btn btn-outline-secondary btn-lg px-4">Özellikler</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container px-4 py-5" id="features">
+    <h2 class="pb-2 border-bottom">Öne Çıkan Özellikler</h2>
+    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+        <div class="feature col">
+            <h3 class="fs-2 text-primary">Tahminleme</h3>
+            <p>Geçmiş çağrı verilerinizi analiz ederek gelecek dönem çağrı hacimlerini %95 doğrulukla tahmin eder.</p>
+        </div>
+        <div class="feature col">
+            <h3 class="fs-2 text-primary">Vardiya Planlama</h3>
+            <p>Çalışanlarınızın yeteneklerine ve uygunluk durumlarına göre en verimli vardiya çizelgesini otomatik
+                oluşturur.</p>
+        </div>
+        <div class="feature col">
+            <h3 class="fs-2 text-primary">Analitik Raporlar</h3>
+            <p>Operasyonel verimliliğinizi anlık olarak takip edin. Isı haritaları ve kuyruk bazlı raporlar elinizin
+                altında.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

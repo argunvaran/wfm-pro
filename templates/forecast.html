@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Tahminleme & Planlama</h2>
+    <div class="d-flex gap-2">
+        <form method="post" class="d-flex gap-2">
+            {% csrf_token %}
+            <select name="queue_id" class="form-select bg-dark text-white border-secondary"
+                onchange="this.form.submit()">
+                <option value="">Tüm Kuyruklar</option>
+                {% for q in queues %}
+                <option value="{{ q.id }}" {% if selected_queue_id==q.id %}selected{% endif %}>{{ q.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" name="update_actuals" class="btn btn-outline-info">
+                <i class="bi bi-arrow-clockwise"></i> Verileri Güncelle
+            </button>
+            <button type="submit" name="generate_forecast" class="btn btn-warning">
+                <i class="bi bi-graph-up"></i> Tahmin Oluştur
+            </button>
+            <button type="submit" name="run_schedule" class="btn btn-success">
+                <i class="bi bi-calendar-check"></i> Planla & Git
+            </button>
+        </form>
+    </div>
+</div>
+
+<p class="text-muted">Dönem: {{ start_date }} - {{ end_date }}</p>
+
+<!-- Chart -->
+<div class="card p-4">
+    <canvas id="forecastChart" style="max-height: 400px;"></canvas>
+</div>
+
+<!-- Data Passing -->
+{{ labels|json_script:"chart-labels" }}
+{{ actual_data|json_script:"chart-actuals" }}
+{{ forecast_data|json_script:"chart-forecast" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = JSON.parse(document.getElementById('chart-labels').textContent);
+    const actuals = JSON.parse(document.getElementById('chart-actuals').textContent);
+    const forecasts = JSON.parse(document.getElementById('chart-forecast').textContent);
+
+    const ctx = document.getElementById('forecastChart');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Gerçekleşen',
+                    data: actuals,
+                    borderColor: '#06b6d4', // Cyan
+                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                    tension: 0.3,
+                    pointRadius: 2
+                },
+                {
+                    label: 'Tahmin (Forecast)',
+                    data: forecasts,
+                    borderColor: '#a855f7', // Purple
+                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                    borderDash: [5, 5],
+                    tension: 0.3,
+                    pointRadius: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Çağrı Hacmi: Gerçekleşen vs Tahmin' }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+{% endblock %}

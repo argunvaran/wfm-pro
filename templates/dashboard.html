@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Haftalık Özet</h2>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5 class="card-title text-muted">Bugün Beklenen Çağrı</h5>
+            <h2 class="fw-bold">{{ total_offered }}</h2>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5 class="card-title text-muted">Aktif Vardiyalar</h5>
+            <h2 class="fw-bold">{{ active_shifts }}</h2>
+        </div>
+    </div>
+</div>
+
+<div class="card p-4">
+    <h5>Son 7 Günlük Çağrı Hacmi</h5>
+    <canvas id="callChart" height="100"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('callChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels| safe }},
+    datasets: [{
+        label: 'Çağrı Sayısı',
+        data: {{ chart_data| safe }},
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+        tension: 0.4,
+        fill: true
+            }]
+        },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+            },
+            x: {
+                grid: { color: 'rgba(255,255,255,0.05)' }
+            }
+        }
+    }
+    });
+</script>
+{% endblock %}

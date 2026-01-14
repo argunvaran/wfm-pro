@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 text-center mb-5">
+        <h1>Plan Seçimi</h1>
+        <p class="text-muted">İhtiyacınıza uygun planı seçin</p>
+    </div>
+
+    {% for plan in plans %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-primary">
+            <div class="card-header text-center bg-transparent border-primary">
+                <h3>{{ plan.name }}</h3>
+                <h2 class="display-4">{{ plan.price_monthly }} <small class="fs-6">TL/Ay</small></h2>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success me-2"></i> {{ plan.max_agents }} Agent Kapasitesi</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i> {{ plan.max_calls_monthly }} Aylık Çağrı
+                    </li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i> 10 Yönetici</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i> 7/24 Destek</li>
+                </ul>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center pb-4">
+                <a href="{% url 'init_payment' plan.id %}" class="btn btn-primary d-block">Şimdi Seç</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

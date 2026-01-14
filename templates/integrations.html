@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Entagrasyon ve API Rehberi</h2>
+        <p class="text-muted">Santral (PBX) ve harici sistemlerinizi WFM sistemine bağlayın.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">API Kimlik Bilgileri</h5>
+    </div>
+    <div class="card-body">
+        {% if config %}
+        <p><strong>Santral Türü:</strong> {{ config.get_type_display }}</p>
+        <p><strong>API Endpoint:</strong> <code>https://{{ request.get_host }}/api/v1/event/push/</code></p>
+        <p><strong>X-API-Key (Header):</strong>
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" value="{{ config.api_key }}" readonly id="apiKeyField">
+            <button class="btn btn-outline-secondary" type="button" onclick="copyKey()">Kopyala</button>
+            <!-- <a href="?regenerate=true" class="btn btn-outline-danger" onclick="return confirm('Emin misiniz?')">Yenile</a> -->
+        </div>
+        </p>
+        {% else %}
+        <div class="alert alert-warning">
+            Henüz bir entegrasyon yapılandırması oluşturulmamış.
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" name="create_default" class="btn btn-sm btn-primary">API Anahtarı Oluştur</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5>cURL Örneği</h5>
+            </div>
+            <div class="card-body">
+                <p>Çağrı Başlangıcı Olayı:</p>
+                <pre class="bg-light p-3 border rounded"><code>curl -X POST https://{{ request.get_host }}/api/v1/event/push/ \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: {{ config.api_key|default:'YOUR_API_KEY' }}" \
+  -d '{
+    "type": "call",
+    "call_id": "UNIQUE-REF-12345",
+    "event": "started",
+    "caller": "5551234567",
+    "queue": "Sales",
+    "timestamp": "2024-01-14T12:00:00Z"
+}'</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5>Agent Durum Örneği (JSON)</h5>
+            </div>
+            <div class="card-body">
+                <p>Ajan durumu "Ready" olduğunda:</p>
+                <pre class="bg-light p-3 border rounded"><code>{
+    "type": "agent_state",
+    "agent_id": "1001",
+    "state": "READY",
+    "reason_code": null,
+    "timestamp": "2024-01-14T12:05:00Z"
+}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyKey() {
+        var copyText = document.getElementById("apiKeyField");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        alert("API Anahtarı kopyalandı.");
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,26 @@
+agent_id,firstname,lastname,email,skills,team,employee_id
+mustafa.aydın,Mustafa,Aydın,mustafa.aydın@example.com,İkna:1|Müşteri İlişkileri:5|Teknik:1,Satış,EMP1000
+murat.koç,Murat,Koç,murat.koç@example.com,İkna:1,Teknik,EMP1001
+can.kaya,Can,Kaya,can.kaya@example.com,İkna:5,Satış,EMP1002
+emine.özdemir,Emine,Özdemir,emine.özdemir@example.com,Almanca:4|Satış:1,Teknik,EMP1003
+elif.özdemir,Elif,Özdemir,elif.özdemir@example.com,Almanca:3,Destek,EMP1004
+murat.kılıç,Murat,Kılıç,murat.kılıç@example.com,Müşteri İlişkileri:3|Satış:4|Teknik:4,İade,EMP1005
+emine.çetin,Emine,Çetin,emine.çetin@example.com,Almanca:4|İkna:1|Satış:1,Satış,EMP1006
+yusuf.özdemir,Yusuf,Özdemir,yusuf.özdemir@example.com,Müşteri İlişkileri:1,Destek,EMP1007
+fatma.yılmaz,Fatma,Yılmaz,fatma.yılmaz@example.com,Müşteri İlişkileri:4,İade,EMP1008
+gamze.çetin,Gamze,Çetin,gamze.çetin@example.com,Müşteri İlişkileri:4,İade,EMP1009
+esra.arslan,Esra,Arslan,esra.arslan@example.com,Almanca:4,Teknik,EMP1010
+zeynep.çetin,Zeynep,Çetin,zeynep.çetin@example.com,İkna:5|Müşteri İlişkileri:1|İngilizce:1,Destek,EMP1011
+ahmet.özdemir,Ahmet,Özdemir,ahmet.özdemir@example.com,İkna:5|Müşteri İlişkileri:2|İngilizce:2,Teknik,EMP1012
+can.kılıç,Can,Kılıç,can.kılıç@example.com,İngilizce:4|Teknik:5|İkna:3,Teknik,EMP1013
+fatma.kılıç,Fatma,Kılıç,fatma.kılıç@example.com,Satış:3|İkna:3|Almanca:2,Teknik,EMP1014
+yusuf.yılmaz,Yusuf,Yılmaz,yusuf.yılmaz@example.com,İkna:4,Destek,EMP1015
+fatma.kara,Fatma,Kara,fatma.kara@example.com,Teknik:4|Satış:2|Müşteri İlişkileri:1,Destek,EMP1016
+ahmet.çetin,Ahmet,Çetin,ahmet.çetin@example.com,İkna:5|Teknik:1,İade,EMP1017
+cem.doğan,Cem,Doğan,cem.doğan@example.com,Satış:5|İngilizce:2|Almanca:3,İade,EMP1018
+gamze.şahin,Gamze,Şahin,gamze.şahin@example.com,Teknik:3|Satış:1,Satış,EMP1019
+cem.çetin,Cem,Çetin,cem.çetin@example.com,Almanca:4|İngilizce:3|Satış:1,Satış,EMP1020
+derya.yılmaz,Derya,Yılmaz,derya.yılmaz@example.com,Satış:4,Satış,EMP1021
+gamze.aydın,Gamze,Aydın,gamze.aydın@example.com,İkna:2|İngilizce:1|Almanca:1,Destek,EMP1022
+mustafa.kara,Mustafa,Kara,mustafa.kara@example.com,Teknik:3|Almanca:1,Teknik,EMP1023
+gamze.kaya,Gamze,Kaya,gamze.kaya@example.com,Müşteri İlişkileri:5,Destek,EMP1024

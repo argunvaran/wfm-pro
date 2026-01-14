@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="tr" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WFM System</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root,
+        [data-bs-theme="light"] {
+            --primary-color: #6366f1;
+            --secondary-color: #a855f7;
+            --bg-body: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --sidebar-bg: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --nav-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        [data-bs-theme="dark"] {
+            --bg-body: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #ffffff;
+            --sidebar-bg: #1e293b;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --nav-bg: rgba(30, 41, 59, 0.8);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .navbar {
+            background-color: var(--nav-bg) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 80px;
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            transition: background-color 0.3s;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            padding-top: 80px;
+            transition: margin-left 0.3s;
+        }
+
+        .nav-link {
+            color: inherit;
+            opacity: 0.7;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            padding: 10px 15px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: rgba(99, 102, 241, 0.1);
+            color: var(--primary-color);
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1000;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg border-bottom sticky-top">
+        <div class="container-fluid">
+            <button class="btn btn-link d-md-none me-2" onclick="toggleSidebar()">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-headset me-2 text-primary"></i>
+                <span>WFM</span> <span class="text-primary">Pro</span>
+            </a>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Theme Toggle -->
+                <button class="btn btn-link nav-link p-0" onclick="toggleTheme()" id="theme-btn">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </button>
+
+                {% if user.is_authenticated %}
+                <span class="navbar-text d-none d-sm-inline">
+                    {{ user.username }} <small class="text-muted">({{ user.role }})</small>
+                </span>
+                <form action="{% url 'logout' %}" method="post" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill px-3">Çıkış</button>
+                </form>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary btn-sm rounded-pill px-3">Giriş</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    {% if user.is_authenticated %}
+    <!-- Sidebar -->
+    <div class="sidebar d-none d-md-block" id="sidebar">
+        <div class="d-flex flex-column px-3">
+            <a href="{% url 'dashboard' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+            </a>
+            <a href="{% url 'report_dashboard' %}" class="nav-link {% if 'reports' in request.path %}active{% endif %}">
+                <i class="bi bi-file-earmark-bar-graph me-2"></i> Raporlar
+            </a>
+            <a href="{% url 'gamification_dashboard' %}"
+                class="nav-link {% if 'games' in request.path %}active{% endif %}">
+                <i class="bi bi-controller me-2"></i> Oyunlaştırma
+            </a>
+            <a href="{% url 'rta_view' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'rta_view' %}active{% endif %}">
+                <i class="bi bi-activity me-2"></i> Canlı İzleme (RTA)
+            </a>
+            <a href="{% url 'forecast' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'forecast' %}active{% endif %}">
+                <i class="bi bi-graph-up-arrow me-2"></i> Tahminleme
+            </a>
+            <a href="{% url 'heatmap' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'heatmap' %}active{% endif %}">
+                <i class="bi bi-grid-3x3 me-2"></i> Yoğunluk Haritası
+            </a>
+            <a href="{% url 'schedule' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
+                <i class="bi bi-calendar-week me-2"></i> Vardiyalar
+            </a>
+            <a href="{% url 'agents' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'agents' %}active{% endif %}">
+                <i class="bi bi-people me-2"></i> Agent Listesi
+            </a>
+            <a href="{% url 'import_data' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'import_data' %}active{% endif %}">
+                <i class="bi bi-cloud-upload me-2"></i> Veri Yükle
+            </a>
+            <hr class="my-2 border-secondary">
+            <a href="{% url 'settings' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                <i class="bi bi-gear me-2"></i> Ayarlar
+            </a>
+            <a href="{% url 'integrations' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'integrations' %}active{% endif %}">
+                <i class="bi bi-hdd-network me-2"></i> Entegrasyonlar
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Content -->
+    <div class="{% if user.is_authenticated %}main-content{% else %}container mt-5 pt-5{% endif %}">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Init Theme
+        const storedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', storedTheme);
+        updateIcon(storedTheme);
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-bs-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', target);
+            localStorage.setItem('theme', target);
+            updateIcon(target);
+        }
+
+        function updateIcon(theme) {
+            const btn = document.getElementById('theme-btn');
+            if (theme === 'dark') {
+                btn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
+            } else {
+                btn.innerHTML = '<i class="bi bi-sun-fill text-warning"></i>';
+            }
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('d-none');
+            sb.classList.toggle('show');
+            // Simplified mobile toggle logic
+            if (sb.classList.contains('d-none')) {
+                sb.style.display = 'none'; // Force hide
+            } else {
+                sb.style.display = 'block'; // Force show
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Raporlar Merkezi</h2>
+        <p class="text-muted">Operasyonel verimlilik ve performans metrikleri.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"> <i class="bi bi-person-badge me-2 text-primary"></i> Ajan Performansı</h5>
+                <p class="card-text">Çağrı sayıları, ortalama konuşma süreleri ve vardiya sayıları.</p>
+                <a href="{% url 'report_agent_performance' %}" class="btn btn-outline-primary">Görüntüle</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"> <i class="bi bi-graph-up me-2 text-success"></i> Servis Seviyesi (SLA)</h5>
+                <p class="card-text">Günlük toplam çağrı yükü ve ortalama işlem süreleri analizi.</p>
+                <a href="{% url 'report_sla' %}" class="btn btn-outline-success">Görüntüle</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

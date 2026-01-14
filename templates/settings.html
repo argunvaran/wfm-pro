@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="mb-4">Sistem Ayarları</h2>
+
+<div class="row">
+    <!-- Teams -->
+    <div class="col-md-4">
+        <div class="card p-3 mb-4">
+            <h5 class="mb-3">Takımlar</h5>
+            <ul class="list-group mb-3">
+                {% for team in teams %}
+                <li class="list-group-item bg-transparent text-white border-secondary">{{ team.name }}</li>
+                {% endfor %}
+            </ul>
+            <form action="{% url 'create_team' %}" method="post" class="d-flex">
+                {% csrf_token %}
+                <input type="text" name="name" class="form-control me-2" placeholder="Yeni Takım Adı" required>
+                <button class="btn btn-sm btn-primary">Ekle</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="col-md-4">
+        <div class="card p-3 mb-4">
+            <h5 class="mb-3">Yetenekler (Skills)</h5>
+            <ul class="list-group mb-3">
+                {% for skill in skills %}
+                <li class="list-group-item bg-transparent text-white border-secondary">{{ skill.name }}</li>
+                {% endfor %}
+            </ul>
+            <form action="{% url 'create_skill' %}" method="post" class="d-flex">
+                {% csrf_token %}
+                <input type="text" name="name" class="form-control me-2" placeholder="Yeni Yetenek" required>
+                <button class="btn btn-sm btn-primary">Ekle</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Queues -->
+    <div class="col-md-4">
+        <div class="card p-3 mb-4">
+            <h5 class="mb-3">Kuyruklar (Queues)</h5>
+            <ul class="list-group mb-3">
+                {% for queue in queues %}
+                <li class="list-group-item bg-transparent text-white border-secondary">{{ queue.name }}</li>
+                {% endfor %}
+            </ul>
+            <form action="{% url 'create_queue' %}" method="post" class="d-flex">
+                {% csrf_token %}
+                <input type="text" name="name" class="form-control me-2" placeholder="Yeni Kuyruk Adı" required>
+                <button class="btn btn-sm btn-primary">Ekle</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

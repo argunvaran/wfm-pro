@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Oyunlaştırma Paneli</h2>
+        <p class="text-muted">Rozetlerin, puanların ve sıralaman.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="card bg-primary text-white">
+            <div class="card-body py-2">
+                <h6 class="mb-0">Toplam Puan</h6>
+                <h2 class="mb-0 fw-bold">{{ total_points }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- My Badges -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Rozet Koleksiyonum</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for item in my_badges %}
+                    <div class="col-md-3 col-sm-6 text-center mb-4">
+                        <div class="p-3 border rounded bg-light hover-shadow h-100">
+                            <i class="bi {{ item.badge.icon }} text-warning display-4 mb-2"></i>
+                            <h6 class="fw-bold">{{ item.badge.name }}</h6>
+                            <p class="small text-muted mb-1">{{ item.badge.description }}</p>
+                            <span class="badge bg-secondary">{{ item.badge.points }} Puan</span>
+                            <div class="mt-2 text-muted" style="font-size: 0.7rem;">
+                                {{ item.awarded_at|date:"d M Y" }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-award text-muted" style="font-size: 4rem;"></i>
+                        <p class="mt-3">Henüz rozet kazanmadın. Çalışmaya devam!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"> <i class="bi bi-trophy-fill text-warning me-2"></i> Lider Tablosu</h5>
+                <span class="badge bg-warning text-dark">Top 10</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for player in leaderboard %}
+                <li
+                    class="list-group-item d-flex justify-content-between align-items-center {% if player.user == request.user %}bg-primary-subtle border-start border-primary border-4{% endif %}">
+                    <div class="d-flex align-items-center">
+                        <span class="fw-bold me-3 text-muted">#{{ forloop.counter }}</span>
+                        <div>
+                            <div class="fw-bold">{{ player.user.first_name }} {{ player.user.last_name }}</div>
+                            <small class="text-muted">{{ player.user.username }}</small>
+                        </div>
+                    </div>
+                    <span class="badge bg-primary rounded-pill">{{ player.points }}</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center">Henüz veri yok.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

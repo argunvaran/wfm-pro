@@ -1,0 +1,30 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wfm-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wfm-web
+  template:
+    metadata:
+      labels:
+        app: wfm-web
+    spec:
+      containers:
+      - name: wfm-web
+        image: my-wfm-app:latest
+        command: ["gunicorn", "wfm_core.wsgi:application", "--bind", "0.0.0.0:8000"]
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: wfm-config
+        # Secrets should be handled separately
+        env:
+        - name: DB_PASSWORD
+          value: "postgres" 
+        - name: SECRET_KEY
+          value: "k8s-secret-key-change-me"

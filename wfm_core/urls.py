@@ -47,4 +47,6 @@ urlpatterns = [
     path('schedule/', schedule_view, name='schedule'),
     path('agents/', agent_list, name='agents'),
     path('mobile/', include('mobile.urls')),
+    path('privacy-policy/', privacy_view, name='privacy_policy'),
+    path('terms/', terms_view, name='terms'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

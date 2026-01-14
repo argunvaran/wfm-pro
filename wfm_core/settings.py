@@ -149,8 +149,8 @@ if not DEBUG:
     
     # HSTS
     SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
     
     # Session / Cookie Security
     SESSION_COOKIE_SECURE = True

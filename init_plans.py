@@ -16,37 +16,40 @@ def init_plans():
     
     plans_data = [
         {
-            "name": "Başlangıç",
-            "description": "Küçük ekipler için ideal",
-            "price_monthly": 499.00,
-            "max_agents": 10,
-            "max_calls_monthly": 5000
+            "name": "Ücretsiz Başlangıç",
+            "description": "Küçük ekipler ve deneme için",
+            "price_monthly": 0.00,
+            "max_agents": 5,
+            "max_calls_monthly": 1000,
+            "max_storage_gb": 1.0
         },
         {
             "name": "Profesyonel", 
-            "description": "Büyüyen işletmeler için",
+            "description": "Büyüyen işletmeler için sınırsız erişim",
             "price_monthly": 999.00,
-            "max_agents": 50,
-            "max_calls_monthly": 20000
+            "max_agents": 9999, # Unlimited essentially
+            "max_calls_monthly": 100000,
+            "max_storage_gb": 50.0
         },
         {
             "name": "Kurumsal",
-            "description": "Büyük ölçekli operasyonlar",
+            "description": "Özel ihtiyaçlar için",
             "price_monthly": 1999.00,
-            "max_agents": 200,
-            "max_calls_monthly": 100000
+            "max_agents": 9999,
+            "max_calls_monthly": 1000000,
+            "max_storage_gb": 100.0
         }
     ]
     
     for p_data in plans_data:
-        plan, created = Plan.objects.get_or_create(
+        plan, created = Plan.objects.update_or_create(
             name=p_data['name'],
             defaults=p_data
         )
         if created:
             print(f"Created Plan: {plan}")
         else:
-            print(f"Plan already exists: {plan}")
+            print(f"Updated Plan: {plan}")
 
 if __name__ == "__main__":
     try:

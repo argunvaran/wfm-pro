@@ -7,6 +7,70 @@ from django.contrib import messages
 import json
 from .utils import IyzicoService
 from django.views.decorators.csrf import csrf_exempt
+import os
+import uuid
+from django_tenants.utils import schema_context
+from django.core.management import call_command
+
+DOMAIN_NAME = os.getenv('DOMAIN_NAME', 'wfm-pro.com')
+
+def provision_tenant(plan):
+    """
+    Creates a new tenant, domain, subscription, and admin user.
+    Returns a dict with connection details.
+    """
+    # Generate unique schema info
+    unique_id = uuid.uuid4().hex[:6]
+    schema_name = f"tenant{unique_id}"
+    domain_url = f"{schema_name}.{DOMAIN_NAME}"
+    
+    # 1. Client
+    client = Client.objects.create(
+        schema_name=schema_name,
+        name=f"Tenant {unique_id}",
+        is_active=True
+    )
+    
+    # 2. Domain
+    Domain.objects.create(
+        domain=domain_url,
+        tenant=client,
+        is_primary=True
+    )
+    
+    # 3. Subscription
+    Subscription.objects.create(
+        client=client, 
+        plan=plan,
+        is_active=True
+    )
+    
+    # 4. User (Admin) inside Tenant
+    username = 'admin'
+    password = 'password123'
+    
+    with schema_context(schema_name):
+        if not User.objects.filter(username=username).exists():
+                User.objects.create_superuser(
+                username=username,
+                email='admin@example.com',
+                password=password,
+                role='admin'
+            )
+        
+        # Generate Default Mock Data
+        try:
+            call_command('generate_mock_data', agents=5, calls=100, days=3)
+        except Exception as e:
+            print(f"Mock Data Generation Failed: {e}")
+
+    return {
+        'status': 'success',
+        'domain_url': f"https://{domain_url}" if os.getenv('SECURE_SSL_REDIRECT') else f"http://{domain_url}:8000",
+        'username': username,
+        'password': password,
+        'plan_name': plan.name
+    }
 
 def pricing_page(request):
     plans = Plan.objects.all().order_by('price_monthly')
@@ -30,6 +94,15 @@ def init_payment(request, plan_id):
     
     # Ideally: Show checkout form
     plan = get_object_or_404(Plan, id=plan_id)
+
+    # --- FREE PLAN LOGIC ---
+    if plan.price_monthly == 0:
+        try:
+            context = provision_tenant(plan)
+            return render(request, 'payment_success.html', context)
+        except Exception as e:
+            return render(request, 'payment_success.html', {'status': 'failure', 'error': str(e)})
+    # -----------------------
     
     # Mock User for Iyzico (Real prod needs actual user data)
     class MockUser:
@@ -78,67 +151,13 @@ def payment_callback(request):
                 messages.error(request, "Plan not found in callback.")
                 return redirect('pricing')
 
-            # Create Tenant
-            import uuid
-            from django_tenants.utils import schema_context
-            
-            # Generate unique schema info
-            unique_id = uuid.uuid4().hex[:6]
-            schema_name = f"tenant{unique_id}"
-            domain_url = f"{schema_name}.localhost" # Local dev
-            
+            # Create Tenant using Helper
             try:
-                # 1. Client
-                client = Client.objects.create(
-                    schema_name=schema_name,
-                    name=f"Tenant {unique_id}",
-                    is_active=True
-                )
+                context = provision_tenant(plan)
+                return render(request, 'payment_success.html', context)
                 
-                # 2. Domain
-                Domain.objects.create(
-                    domain=domain_url,
-                    tenant=client,
-                    is_primary=True
-                )
-                
-                # 3. Subscription
-                Subscription.objects.create(
-                    client=client, 
-                    plan=plan,
-                    is_active=True
-                )
-                
-                # 4. User (Admin)
-                # Create default admin for this tenant
-                username = 'admin'
-                password = 'password123'
-                
-                with schema_context(schema_name):
-                    # Check if user exists (should not, new schema)
-                    if not User.objects.filter(username=username).exists():
-                         User.objects.create_superuser(
-                            username=username,
-                            email='admin@example.com',
-                            password=password,
-                            role='admin'
-                        )
-                    
-                    # Generate Default Mock Data
-                    try:
-                        from django.core.management import call_command
-                        # Generate small dataset for immediate usage
-                        call_command('generate_mock_data', agents=10, calls=1000, days=7)
-                    except Exception as e:
-                        print(f"Mock Data Generation Failed: {e}")
-                
-                return render(request, 'payment_success.html', {
-                    'status': 'success',
-                    'domain_url': f"http://{domain_url}:8000",
-                    'username': username,
-                    'password': password,
-                    'plan_name': plan.name
-                })
+            except Exception as e:
+                return render(request, 'payment_success.html', {'status': 'failure', 'error': str(e)})
                 
             except Exception as e:
                 return render(request, 'payment_success.html', {'status': 'failure', 'error': str(e)})

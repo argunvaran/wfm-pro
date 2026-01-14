@@ -7,6 +7,7 @@ class Plan(models.Model):
     price_monthly = models.DecimalField(max_digits=10, decimal_places=2)
     max_agents = models.IntegerField(default=10)
     max_calls_monthly = models.IntegerField(default=1000)
+    max_storage_gb = models.FloatField(default=1.0) # Data limit in GB
     
     def __str__(self):
         return f"{self.name} - {self.price_monthly} TL"

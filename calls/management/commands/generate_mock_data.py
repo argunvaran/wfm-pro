@@ -140,8 +140,13 @@ class Command(BaseCommand):
                     self.stdout.write(f"inserted batch 5000 calls...")
                     calls_to_create = []
 
-            # Remaining
             if calls_to_create:
                 Call.objects.bulk_create(calls_to_create)
                 
             self.stdout.write(self.style.SUCCESS(f"Successfully generated {call_count} calls."))
+
+            # 4. Aggregate Data for Forecasts
+            self.stdout.write("Aggregating actuals for forecasting...")
+            from calls.utils import aggregate_actuals
+            aggregate_actuals()
+            self.stdout.write(self.style.SUCCESS("Aggregation Complete. Data ready for forecasting."))

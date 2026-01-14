@@ -10,7 +10,7 @@
                 onchange="this.form.submit()">
                 <option value="">Tüm Kuyruklar</option>
                 {% for q in queues %}
-                <option value="{{ q.id }}" {% if selected_queue_id==q.id %}selected{% endif %}>{{ q.name }}</option>
+                <option value="{{ q.id }}" {% if selected_queue_id == q.id %}selected{% endif %}>{{ q.name }}</option>
                 {% endfor %}
             </select>
             <button type="submit" name="update_actuals" class="btn btn-outline-info">

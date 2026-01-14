@@ -35,7 +35,7 @@ docker-compose exec web python init_plans.py
 
 # 6. Restart to ensure all code is loaded
 echo "--> 6. Restarting Services..."
-docker-compose restart web worker celery
+docker-compose restart web worker
 
 echo "======================================================="
 echo "   UPDATE COMPLETE! ✅"

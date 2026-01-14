@@ -30,10 +30,36 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
-
+# V3: Public Release Configuration
+# Allows main domain, all subdomains (*.wfm-pro.com), and the specific AWS IP
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS += ['.wfm-pro.com', '23.22.233.16', 'wfm-pro.com']
 
 # Application definition
+# ... (Shared Apps block)
+
+# CSRF & SECURITY SETTINGS
+# ------------------------------------------------------------------------------
+# Essential for multi-tenant subdomains working over HTTPS
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.wfm-pro.com',
+    'https://wfm-pro.com',
+    'http://23.22.233.16', # Fallback for direct IP access
+]
+
+if not DEBUG:
+    # HTTPS / SSL
+    # AWS terminates SSL at Load Balancer or Nginx, so we trust the header
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # HSTS
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 
 SHARED_APPS = [
     'django_tenants',  # mandatory

@@ -32,8 +32,8 @@
                             {% for agent in team.agentprofile_set.all %}
                             <div class="agent-card mb-1" data-id="{{ agent.id }}" data-type="agent">
                                 <div class="d-flex justify-content-between align-items-center bg-info rounded p-1">
-                                    <span class="text-dark small"><i class="bi bi-grip-vertical"></i> {{
-                                        agent.user.username }}</span>
+                                    <span class="text-dark small"><i class="bi bi-grip-vertical"></i> {{agent.user.username }}</span>
+                                        
                                     <a href="{% url 'agent_detail' agent.id %}" class="btn btn-sm btn-dark py-0"
                                         style="font-size: 0.7rem;">
                                         <i class="bi bi-arrow-right"></i>
@@ -56,8 +56,8 @@
                 {% for agent in unassigned_agents %}
                 <div class="agent-card mb-1" data-id="{{ agent.id }}" data-type="agent">
                     <div class="d-flex justify-content-between align-items-center bg-info rounded p-1">
-                        <span class="text-dark small"><i class="bi bi-grip-vertical"></i> {{ agent.user.username
-                            }}</span>
+                        <span class="text-dark small"><i class="bi bi-grip-vertical"></i> {{ agent.user.username}}</span>
+                            
                         <a href="{% url 'agent_detail' agent.id %}" class="btn btn-sm btn-dark py-0"
                             style="font-size: 0.7rem;">
                             <i class="bi bi-arrow-right"></i>

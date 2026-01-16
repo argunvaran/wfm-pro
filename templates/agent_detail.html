@@ -102,10 +102,10 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="update_role">
                         <select name="role" class="form-select">
-                            <option value="agent" {% if agent.user.role=='agent' %}selected{% endif %}>Agent</option>
-                            <option value="manager" {% if agent.user.role=='manager' %}selected{% endif %}>Takım Lideri
+                            <option value="agent" {% if agent.user.role == 'agent' %}selected{% endif %}>Agent</option>
+                            <option value="manager" {% if agent.user.role == 'manager' %}selected{% endif %}>Takım Lideri
                                 (Manager)</option>
-                            <option value="admin" {% if agent.user.role=='admin' %}selected{% endif %}>Yönetici (Admin)
+                            <option value="admin" {% if agent.user.role == 'admin' %}selected{% endif %}>Yönetici (Admin)
                             </option>
                         </select>
                         <button type="submit" class="btn btn-outline-danger">Güncelle</button>

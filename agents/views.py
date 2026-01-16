@@ -8,13 +8,21 @@ from django.db import transaction
 import json
 from django.http import JsonResponse
 from .models import Department
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 @login_required
 def settings_view(request):
-    teams = Team.objects.all()
+    # This import was incorrectly placed inside the function in the instruction.
+    # It should be at the top of the file.
+    # from django.db.models import Q
+    # from django.core.paginator import Paginator
     skills = Skill.objects.all()
     queues = Queue.objects.all()
     shift_types = ShiftType.objects.all()
+    # 'teams' variable is not defined here, assuming it's defined elsewhere or meant to be fetched.
+    # For now, I'll assume it's meant to be `Team.objects.all()` for syntactic correctness.
+    teams = Team.objects.all()
     return render(request, 'settings.html', {
         'teams': teams, 
         'skills': skills, 
@@ -136,8 +144,6 @@ def edit_shift_type(request, pk):
     activities = st.template_activities.all()
     return render(request, 'shift_config.html', {'shift_type': st, 'activities': activities})
 
-from django.core.paginator import Paginator
-from django.db.models import Q
 
 from .utils import get_allowed_agents
 
@@ -360,7 +366,29 @@ def user_management_view(request):
     # List all users
     from users.models import User
     from agents.models import Team
-    users = User.objects.filter(is_active=True).select_related('agent_profile').prefetch_related('agent_profile__managed_teams').order_by('username')
-    all_teams = Team.objects.all().select_related('department').order_by('department__name', 'name')
     
-    return render(request, 'user_list.html', {'users': users, 'all_teams': all_teams})
+    # 3. Base Query
+    users_list = User.objects.all().select_related('agent_profile').order_by('username')
+    
+    # 4. Search Filter
+    search_query = request.GET.get('q', '')
+    if search_query:
+        users_list = users_list.filter(
+            Q(username__icontains=search_query) | 
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
+
+    # 5. Pagination
+    paginator = Paginator(users_list, 20) # 20 users per page
+    page_number = request.GET.get('page')
+    users = paginator.get_page(page_number)
+
+    all_teams = Team.objects.select_related('department').order_by('department__name', 'name')
+    context = {
+        'users': users,
+        'all_teams': all_teams,
+        'search_query': search_query
+    }
+    return render(request, 'user_list.html', context)

@@ -9,6 +9,18 @@ import uuid
 class CustomLoginView(LoginView):
     template_name = 'login.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Check if we are on the public tenant
+        # In django-tenants, request.tenant is set by middleware
+        if hasattr(self.request, 'tenant'):
+            context['is_public_tenant'] = (self.request.tenant.schema_name == 'public')
+            context['tenant_name'] = self.request.tenant.name
+        else:
+             # Fallback if something is wrong with middleware, act as public or safely handling
+            context['is_public_tenant'] = True
+        return context
+
 def test_signup(request):
     if request.method == 'POST':
         # Create Test Tenant

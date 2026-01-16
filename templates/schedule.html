@@ -10,10 +10,34 @@
     </form>
 </div>
 
-<p class="text-muted">{{ start_date }} - {{ end_date }}</p>
+<!-- Filter Form -->
+<form method="get" class="row g-3 align-items-end mb-4">
+    <div class="col-md-3">
+        <label class="form-label small text-muted">Başlangıç Tarihi</label>
+        <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small text-muted">Bitiş Tarihi</label>
+        <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small text-muted">Agent Ara</label>
+        <input type="text" name="q" class="form-control" placeholder="İsim..." value="{{ request.GET.q }}">
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i> Filtrele</button>
+    </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <p class="text-muted mb-0 small"><i class="bi bi-calendar-range"></i> {{ start_date }} - {{ end_date }}</p>
+    {% if request.GET.q or request.GET.start_date %}
+    <a href="{% url 'schedule' %}" class="btn btn-sm btn-outline-secondary">Filtreleri Temizle</a>
+    {% endif %}
+</div>
 
 <div class="table-responsive card p-2">
-    <table class="table table-dark table-hover mb-0">
+    <table class="table table-hover mb-0">
         <thead>
             <tr>
                 <th>Agent</th>
@@ -29,13 +53,28 @@
                 {% for shift in row.shifts %}
                 <td>
                     {% if shift %}
-                    <span class="badge bg-primary">
-                        {{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }}
-                    </span>
-                    <br>
-                    <small class="text-muted">Mola: {{ shift.break_start|time:"H:i" }}</small>
+                    <div role="button" tabindex="0"
+                        class="shift-cell p-1 rounded border border-secondary position-relative"
+                        onclick="openShiftModal(this)" data-shift-name="{{ shift.shift_name }}"
+                        data-start="{{ shift.start_time|time:'H:i' }}" data-end="{{ shift.end_time|time:'H:i' }}"
+                        data-activities='[
+                            {% for act in shift.activities.all %}
+                            {
+                                "type": "{{ act.get_activity_type_display }}",
+                                "start": "{{ act.start_time|time:' H:i' }}", "end" : "{{ act.end_time|time:'H:i' }}"
+                        , "raw_type" : "{{ act.activity_type }}" }{% if not forloop.last %},{% endif %} {% endfor %} ]'>
+
+                        <!-- Visible Content -->
+                        <span
+                            class="badge bg-{% if shift.shift_name == 'Sabah' %}warning{% elif shift.shift_name == 'Öğlen' %}info{% else %}primary{% endif %} text-dark w-100">
+                            {{ shift.shift_name }}
+                        </span>
+                        <div class="small mt-1">
+                            {{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }}
+                        </div>
+                    </div>
                     {% else %}
-                    <span class="text-muted">-</span>
+                    <span class="text-muted opacity-50">-</span>
                     {% endif %}
                 </td>
                 {% endfor %}
@@ -44,4 +83,68 @@
         </tbody>
     </table>
 </div>
+
+<!-- Shift Detail Modal -->
+<div class="modal fade" id="shiftDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shiftDetailTitle">Vardiya Detayı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="shiftTimeRange" class="mb-3 text-muted"></h6>
+                <div class="list-group" id="activityList">
+                    <!-- JS will populate -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openShiftModal(element) {
+        // Extract data
+        const name = element.getAttribute('data-shift-name');
+        const start = element.getAttribute('data-start');
+        const end = element.getAttribute('data-end');
+
+        let activities = [];
+        try {
+            // Replace None/Python weirdness if any, though Django template usually handles it.
+            // We used standard JSON syntax in the template loop.
+            activities = JSON.parse(element.getAttribute('data-activities'));
+        } catch (e) {
+            console.error("Error parsing activities", e);
+        }
+
+        // Populate Modal
+        document.getElementById('shiftDetailTitle').textContent = name + ' Vardiyası Detayları';
+        document.getElementById('shiftTimeRange').textContent = 'Saat: ' + start + ' - ' + end;
+
+        const list = document.getElementById('activityList');
+        list.innerHTML = '';
+
+        if (activities.length === 0) {
+            list.innerHTML = '<div class="text-center text-muted p-3">Aktivite detayı bulunamadı.</div>';
+        } else {
+            activities.forEach(act => {
+                let colorClass = 'list-group-item-secondary';
+                if (act.raw_type === 'WORK') colorClass = 'list-group-item-success';
+                else if (act.raw_type === 'LUNCH') colorClass = 'list-group-item-warning';
+
+                const item = document.createElement('div');
+                item.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${colorClass}`;
+                item.innerHTML = `
+                    <span><strong>${act.type}</strong></span>
+                    <span class="badge bg-secondary rounded-pill">${act.start} - ${act.end}</span>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Show Modal
+        new bootstrap.Modal(document.getElementById('shiftDetailModal')).show();
+    }
+</script>
 {% endblock %}

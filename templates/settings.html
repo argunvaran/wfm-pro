@@ -4,12 +4,12 @@
 
 <div class="row">
     <!-- Teams -->
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card p-3 mb-4">
             <h5 class="mb-3">Takımlar</h5>
             <ul class="list-group mb-3">
                 {% for team in teams %}
-                <li class="list-group-item bg-transparent text-white border-secondary">{{ team.name }}</li>
+                <li class="list-group-item bg-transparent border-secondary">{{ team.name }}</li>
                 {% endfor %}
             </ul>
             <form action="{% url 'create_team' %}" method="post" class="d-flex">
@@ -21,12 +21,12 @@
     </div>
 
     <!-- Skills -->
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card p-3 mb-4">
             <h5 class="mb-3">Yetenekler (Skills)</h5>
             <ul class="list-group mb-3">
                 {% for skill in skills %}
-                <li class="list-group-item bg-transparent text-white border-secondary">{{ skill.name }}</li>
+                <li class="list-group-item bg-transparent border-secondary">{{ skill.name }}</li>
                 {% endfor %}
             </ul>
             <form action="{% url 'create_skill' %}" method="post" class="d-flex">
@@ -38,18 +38,155 @@
     </div>
 
     <!-- Queues -->
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card p-3 mb-4">
-            <h5 class="mb-3">Kuyruklar (Queues)</h5>
+            <h5 class="mb-3">Kuyruklar</h5>
             <ul class="list-group mb-3">
                 {% for queue in queues %}
-                <li class="list-group-item bg-transparent text-white border-secondary">{{ queue.name }}</li>
+                <li class="list-group-item bg-transparent border-secondary">{{ queue.name }}</li>
                 {% endfor %}
             </ul>
             <form action="{% url 'create_queue' %}" method="post" class="d-flex">
                 {% csrf_token %}
-                <input type="text" name="name" class="form-control me-2" placeholder="Yeni Kuyruk Adı" required>
+                <input type="text" name="name" class="form-control me-2" placeholder="Yeni Kuyruk" required>
                 <button class="btn btn-sm btn-primary">Ekle</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Shift Types -->
+    <div class="col-md-3">
+        <div class="card p-3 mb-4">
+            <h5 class="mb-3">Vardiya Tipleri</h5>
+            <ul class="list-group mb-3">
+                {% for st in shift_types %}
+                <li
+                    class="list-group-item bg-transparent border-secondary d-flex justify-content-between align-items-center">
+                    <a href="{% url 'edit_shift_type' st.pk %}" class="text-decoration-none">
+                        {{ st.name }} <i class="bi bi-pencil-square small ms-1 text-muted"></i>
+                    </a>
+                    <span class="badge bg-secondary">{{ st.duration_hours }}s</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <button class="btn btn-sm btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addShiftTypeModal">
+                Yeni Vardiya Tipi Ekle
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Shift Type Modal -->
+<div class="modal fade" id="addShiftTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Vardiya Tipi Oluştur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'create_shift_type' %}" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Vardiya Adı</label>
+                        <input type="text" name="name" class="form-control" placeholder="Örn: 09-18 Standart" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Toplam Süre (Saat)</label>
+                        <input type="number" step="0.5" name="duration_hours" class="form-control" value="9.0" required>
+                    </div>
+
+                    <h6 class="mt-4 mb-3 border-bottom border-secondary pb-2">Zaman Planı</h6>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label text-muted small">En Erken Başlangıç</label>
+                            <input type="time" name="start_time_min" class="form-control" value="08:00">
+                        </div>
+                        <div class="col">
+                            <label class="form-label text-muted small">En Geç Başlangıç</label>
+                            <input type="time" name="start_time_max" class="form-control" value="10:00">
+                        </div>
+                    </div>
+
+                    <h6 class="mt-4 mb-3 border-bottom border-secondary pb-2">Molalar & Yemek</h6>
+                    <p class="small text-muted mb-3">İstenmeyen alanları boş bırakabilirsiniz. Sadece Work (Çalışma)
+                        tanımlamak gerekmez.</p>
+
+                    <!-- Breaks Section -->
+                    <label class="form-label">Molalar (Breaks)</label>
+                    <div id="break-container">
+                        <!-- First Break Row (Default) -->
+                        <div class="row mb-2 align-items-end break-row">
+                            <div class="col-7">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Başlangıçtan</span>
+                                    <input type="number" name="break_start[]" class="form-control"
+                                        placeholder="dk sonra">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" name="break_duration[]" class="form-control" value="15">
+                                    <span class="input-group-text">dk</span>
+                                </div>
+                            </div>
+                            <div class="col-1 p-0">
+                                <!-- Placeholder for potential remove button on dynamic rows -->
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3 w-100" onclick="addBreakRow()">
+                        <i class="bi bi-plus"></i> Başka Mola Ekle
+                    </button>
+
+                    <script>
+                        function addBreakRow() {
+                            const container = document.getElementById('break-container');
+                            const row = document.createElement('div');
+                            row.className = 'row mb-2 align-items-end break-row';
+                            row.innerHTML = `
+                                <div class="col-7">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">Başlangıçtan</span>
+                                        <input type="number" name="break_start[]" class="form-control" placeholder="dk sonra">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="break_duration[]" class="form-control" value="15">
+                                        <span class="input-group-text">dk</span>
+                                    </div>
+                                </div>
+                                <div class="col-1 p-0">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.break-row').remove()">x</button>
+                                </div>
+                            `;
+                            container.appendChild(row);
+                        }
+                    </script>
+
+                    <!-- Lunch Rule -->
+                    <div class="row mb-3 align-items-end">
+                        <div class="col-8">
+                            <label class="form-label">Öğle Yemeği (Lunch)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Başlangıçtan</span>
+                                <input type="number" name="lunch_start" class="form-control" placeholder="dk sonra">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="input-group">
+                                <input type="number" name="lunch_duration" class="form-control" value="60">
+                                <span class="input-group-text">dk</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Oluştur</button>
+                </div>
             </form>
         </div>
     </div>

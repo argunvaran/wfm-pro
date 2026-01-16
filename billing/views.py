@@ -58,15 +58,16 @@ def provision_tenant(plan):
                 role='admin'
             )
         
-        # Generate Default Mock Data
-        try:
-            call_command('generate_mock_data', agents=5, calls=100, days=3)
-        except Exception as e:
-            print(f"Mock Data Generation Failed: {e}")
+        
+        # Default mock data generation disabled by user request [2026-01-16]
+        # try:
+        #     call_command('generate_mock_data', agents=5, calls=100, days=3)
+        # except Exception as e:
+        #     print(f"Mock Data Generation Failed: {e}")
 
     return {
         'status': 'success',
-        'domain_url': f"https://{domain_url}" if os.getenv('SECURE_SSL_REDIRECT') else f"http://{domain_url}:8000",
+        'domain_url': f"https://{domain_url}" if os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True' else f"http://{domain_url}:8000",
         'username': username,
         'password': password,
         'plan_name': plan.name

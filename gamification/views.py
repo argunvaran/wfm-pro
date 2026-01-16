@@ -17,12 +17,33 @@ def gamification_dashboard(request):
     # This is a bit complex in pure SQL because points are in the related Badge model
     # Simpler approach: Get all users, annotate with sum of badge points
     
+    # Leaderboard
     leaderboard = []
-    users = User.objects.filter(is_active=True)
+    
+    # RBAC: Filter Users for Leaderboard
+    if request.user.role == 'manager':
+        # Manager: See Team Members
+        try:
+            team = request.user.agent_profile.team
+            users = User.objects.filter(is_active=True, agent_profile__team=team)
+        except:
+            users = User.objects.none()
+    elif request.user.role == 'agent':
+        # Agent: See Team (Optional) or Just Self + Top? 
+        # Requirement: "agent için orda görevler tamamlaması halinde rozet kazanması gibi baya aktif bir alan olmalı"
+        # Usually agents want to compete with team. Let's show Team leaderboard for agents too.
+        try:
+            team = request.user.agent_profile.team
+            users = User.objects.filter(is_active=True, agent_profile__team=team)
+        except:
+            users = User.objects.none()
+    else:
+        # Admin: All
+        users = User.objects.filter(is_active=True)
+        
     for u in users:
         pts = UserBadge.objects.filter(user=u).aggregate(Sum('badge__points'))['badge__points__sum'] or 0
-        if pts > 0:
-            leaderboard.append({'user': u, 'points': pts})
+        leaderboard.append({'user': u, 'points': pts})
             
     # Sort by points desc
     leaderboard.sort(key=lambda x: x['points'], reverse=True)

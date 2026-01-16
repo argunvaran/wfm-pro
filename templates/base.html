@@ -143,16 +143,36 @@
     <!-- Sidebar -->
     <div class="sidebar d-none d-md-block" id="sidebar">
         <div class="d-flex flex-column px-3">
+            <!-- Shared Links -->
             <a href="{% url 'dashboard' %}"
                 class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <i class="bi bi-speedometer2 me-2"></i> Dashboard
             </a>
-            <a href="{% url 'report_dashboard' %}" class="nav-link {% if 'reports' in request.path %}active{% endif %}">
-                <i class="bi bi-file-earmark-bar-graph me-2"></i> Raporlar
+
+            <a href="{% url 'schedule' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
+                <i class="bi bi-calendar-week me-2"></i> Vardiyalar
             </a>
+            <a href="{% url 'agents' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'agents' %}active{% endif %}">
+                <i class="bi bi-people me-2"></i> Agent Listesi
+            </a>
+            <!-- Gamification - Everyone -->
             <a href="{% url 'gamification_dashboard' %}"
                 class="nav-link {% if 'games' in request.path %}active{% endif %}">
                 <i class="bi bi-controller me-2"></i> Oyunlaştırma
+            </a>
+
+            <!-- Admin Only Links -->
+            {% if request.user.role == 'admin' or request.user.is_superuser %}
+            <div class="mt-2 text-muted small ps-3 fw-bold text-uppercase" style="font-size: 0.7rem;">YÖNETİM</div>
+
+            <a href="{% url 'user_management' %}" class="nav-link {% if 'users' in request.path %}active{% endif %}">
+                <i class="bi bi-person-badge me-2"></i> Kullanıcılar
+            </a>
+
+            <a href="{% url 'report_dashboard' %}" class="nav-link {% if 'reports' in request.path %}active{% endif %}">
+                <i class="bi bi-file-earmark-bar-graph me-2"></i> Raporlar
             </a>
             <a href="{% url 'rta_view' %}"
                 class="nav-link {% if request.resolver_match.url_name == 'rta_view' %}active{% endif %}">
@@ -166,19 +186,15 @@
                 class="nav-link {% if request.resolver_match.url_name == 'heatmap' %}active{% endif %}">
                 <i class="bi bi-grid-3x3 me-2"></i> Yoğunluk Haritası
             </a>
-            <a href="{% url 'schedule' %}"
-                class="nav-link {% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
-                <i class="bi bi-calendar-week me-2"></i> Vardiyalar
-            </a>
-            <a href="{% url 'agents' %}"
-                class="nav-link {% if request.resolver_match.url_name == 'agents' %}active{% endif %}">
-                <i class="bi bi-people me-2"></i> Agent Listesi
-            </a>
             <a href="{% url 'import_data' %}"
                 class="nav-link {% if request.resolver_match.url_name == 'import_data' %}active{% endif %}">
                 <i class="bi bi-cloud-upload me-2"></i> Veri Yükle
             </a>
             <hr class="my-2 border-secondary">
+            <a href="{% url 'org_chart' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'org_chart' %}active{% endif %}">
+                <i class="bi bi-diagram-3 me-2"></i> Organizasyon
+            </a>
             <a href="{% url 'settings' %}"
                 class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
                 <i class="bi bi-gear me-2"></i> Ayarlar
@@ -187,6 +203,7 @@
                 class="nav-link {% if request.resolver_match.url_name == 'integrations' %}active{% endif %}">
                 <i class="bi bi-hdd-network me-2"></i> Entegrasyonlar
             </a>
+            {% endif %}
         </div>
     </div>
     {% endif %}

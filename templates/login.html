@@ -11,6 +11,7 @@
                 {{ form|crispy }}
                 <button type="submit" class="btn btn-primary w-100 mt-3">Giriş</button>
             </form>
+            {% if is_public_tenant %}
             <hr>
             <div class="text-center">
                 <p class="mb-2">Yeni Müşteri misiniz?</p>
@@ -23,19 +24,29 @@
                     <span class="input-group-text" id="basic-addon3">https://</span>
                     <input type="text" class="form-control" id="tenantInput" placeholder="şirketadı"
                         aria-describedby="basic-addon3">
-                    <span class="input-group-text">.localhost:8000</span>
+                    <span class="input-group-text" id="domainSuffix">.domain.com</span>
                 </div>
                 <button onclick="goToTenant()" class="btn btn-outline-light w-100 btn-sm">Panele Git</button>
             </div>
 
             <script>
+                // Dynamically set the domain suffix in the UI (hiding port for cleaner look as requested)
+                document.addEventListener('DOMContentLoaded', function() {
+                    const host = window.location.hostname; // hostname excludes port
+                    document.getElementById('domainSuffix').textContent = '.' + host;
+                });
+
                 function goToTenant() {
                     const tenant = document.getElementById('tenantInput').value;
                     if (tenant) {
-                        window.location.href = `http://${tenant}.localhost:8000/login/`;
+                        const protocol = window.location.protocol;
+                        const host = window.location.host; // host includes port if present
+                        // Construct new URL: protocol//tenant.host/login/
+                         window.location.href = `${protocol}//${tenant}.${host}/login/`;
                     }
                 }
             </script>
+            {% endif %}
         </div>
     </div>
 </div>

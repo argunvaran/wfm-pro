@@ -48,8 +48,7 @@ def generate_schedule(ignored_tenant, start_date, end_date):
         defaults={
             'start_time_min': time(9,0),
             'start_time_max': time(9,0),
-            'duration_hours': 9.0,
-            'paid_hours': 8.0
+            'duration_hours': 9.0
         }
     )
     
@@ -138,7 +137,7 @@ def generate_schedule(ignored_tenant, start_date, end_date):
                 ))
                 
                 # Update State
-                agent_states[agent.id]['hours_week'] += st.paid_hours
+                agent_states[agent.id]['hours_week'] += max(0, st.duration_hours - 1)
                 agent_states[agent.id]['last_shift_end'] = datetime.combine(d_date, time(best_start, 0)) + timedelta(hours=shift_len)
                 
                 # Update Coverage
@@ -149,6 +148,10 @@ def generate_schedule(ignored_tenant, start_date, end_date):
                         
     with transaction.atomic():
         Shift.objects.filter(date__range=(start_date, end_date)).delete()
-        Shift.objects.bulk_create(shifts_to_create)
+        created_shifts = Shift.objects.bulk_create(shifts_to_create)
+        
+        # Populate Activities (Breaks, Lunch) for each shift
+        for s in created_shifts:
+            s.populate_activities()
 
     return len(shifts_to_create)

@@ -4,7 +4,7 @@ import uuid
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from agents.models import AgentProfile, Team, ShiftType
+from agents.models import AgentProfile, Team, ShiftType, Department
 from calls.models import Call, Queue
 from django.db import transaction
 
@@ -33,16 +33,39 @@ class Command(BaseCommand):
         self.stdout.write(f"Target: {agent_count} Agents, {call_count} Calls over {days} Days starting {start_date}")
 
         if delete:
-            self.stdout.write("Deleting existing data...")
+            self.stdout.write("Deleting existing data (Calls, Agents, Teams, Departments)...")
             Call.objects.all().delete()
-            # We don't delete agents usually as they might be Users, but for this script maybe?
-            # Let's keep agents if not explicit, but here we just delete calls.
-            # Agent cleanup is risky if it cascades to users.
-            
+            # Delete agents - careful with Users, but required for clean slate
+            AgentProfile.objects.all().delete() 
+            Team.objects.all().delete()
+            Department.objects.all().delete()
+        
         with transaction.atomic():
-            # 1. Setup Basic Data (Queue, Team, ShiftType)
+            # 1. Setup Hierarchy (Departments & Teams)
+            dept_support, _ = Department.objects.get_or_create(name='Customer Support')
+            dept_sales, _ = Department.objects.get_or_create(name='Sales')
+            dept_tech, _ = Department.objects.get_or_create(name='Technical Service')
+
+            teams_structure = [
+                {'name': 'Inbound Support', 'dept': dept_support},
+                {'name': 'VIP Support', 'dept': dept_support},
+                {'name': 'Outbound Sales', 'dept': dept_sales},
+                {'name': 'Retention', 'dept': dept_sales},
+                {'name': 'Level 1 Tech', 'dept': dept_tech},
+                {'name': 'Level 2 Tech', 'dept': dept_tech},
+            ]
+            
+            created_teams = []
+            for t_info in teams_structure:
+                t, _ = Team.objects.get_or_create(name=t_info['name'], defaults={'department': t_info['dept']})
+                # Ensure dept link if exists
+                if not t.department:
+                    t.department = t_info['dept']
+                    t.save()
+                created_teams.append(t)
+
+            # Queue & Shift
             queue, _ = Queue.objects.get_or_create(name='General Support')
-            team, _ = Team.objects.get_or_create(name='Support Team')
             st, _ = ShiftType.objects.get_or_create(
                 name='Standard 09-18',
                 defaults={
@@ -58,22 +81,25 @@ class Command(BaseCommand):
             
             if needed_agents > 0:
                 self.stdout.write(f"Creating {needed_agents} new agents...")
-                new_users = []
-                new_profiles = []
                 
-                # Bulk create Users is tricky with password hashing. 
-                # For 100 users, loop is fine.
                 for i in range(needed_agents):
                     uid = uuid.uuid4().hex[:8]
                     username = f"agent_{uid}"
                     email = f"{username}@test.com"
                     
-                    user = User(username=username, email=email, role='agent')
-                    user.set_password('pass1234')
-                    user.save()
+                    # Check if user exists (if we didn't delete users)
+                    if not User.objects.filter(username=username).exists():
+                        user = User(username=username, email=email, role='agent')
+                        user.set_password('pass1234')
+                        user.save()
+                    else:
+                        user = User.objects.get(username=username)
                     
-                    profile = AgentProfile(user=user, team=team, shift_type=st)
-                    profile.save() # Doing save individually to ensure signals/ID usage if any
+                    # Assign random team
+                    assigned_team = random.choice(created_teams)
+                    
+                    profile = AgentProfile(user=user, team=assigned_team, shift_type=st)
+                    profile.save()
                 
                 self.stdout.write(self.style.SUCCESS(f"Created {needed_agents} agents."))
             

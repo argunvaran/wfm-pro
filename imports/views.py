@@ -58,8 +58,9 @@ def download_sample_csv(request, type):
     writer = csv.writer(response)
     
     if type == 'agents':
-        writer.writerow(['agent_id', 'firstname', 'lastname', 'email', 'skills', 'team', 'employee_id'])
-        writer.writerow(['ahmet.yilmaz', 'Ahmet', 'Yılmaz', 'ahmet@example.com', 'Satış:5|İkna:4', 'Satış', 'EMP1001'])
+        writer.writerow(['agent_id', 'firstname', 'lastname', 'email', 'department', 'team', 'skills', 'employee_id'])
+        writer.writerow(['ahmet.yilmaz', 'Ahmet', 'Yılmaz', 'ahmet@example.com', 'Müşteri Hizmetleri', 'Satış Takımı', 'Satış:5|İkna:4', 'EMP1001'])
+        writer.writerow(['mehmet.demir', 'Mehmet', 'Demir', 'mehmet@example.com', '', '', 'Teknik:3', 'EMP1002']) # Default/Empty example
     elif type == 'calls':
         writer.writerow(['call_id', 'timestamp', 'duration', 'agent', 'queue'])
         writer.writerow(['unique-id-1', '2026-01-01 09:30:00', '120', 'ahmet.yilmaz', 'Satış Hattı'])

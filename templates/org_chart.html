@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Organizasyon Şeması</h2>
+    <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-warning disabled" id="save-btn" onclick="saveAllChanges()">
+            <i class="bi bi-save"></i> Değişiklikleri Kaydet <span class="badge bg-light text-dark ms-1"
+                id="change-count">0</span>
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+            <i class="bi bi-plus-lg"></i> Departman Ekle
+        </button>
+    </div>
+</div>
+
+<!-- Main Container -->
+<div class="row">
+    <!-- Unassigned Area (Left Sidebar) -->
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header border-secondary text-warning">
+                <i class="bi bi-exclamation-triangle"></i> Atanmamış Takımlar
+            </div>
+            <div class="card-body p-2 team-container" id="unassigned-teams" data-dept-id="none">
+                {% for team in unassigned_teams %}
+                <div class="card bg-secondary text-white mb-2 team-card" data-id="{{ team.id }}" data-type="team">
+                    <div class="card-body p-2">
+                        <i class="bi bi-people-fill"></i> {{ team.name }}
+                        <div class="agent-container mt-2 p-1 bg-dark rounded" id="team-{{ team.id }}"
+                            data-team-id="{{ team.id }}" style="min-height: 30px;">
+                            {% for agent in team.agentprofile_set.all %}
+                            <div class="agent-card mb-1" data-id="{{ agent.id }}" data-type="agent">
+                                <div class="d-flex justify-content-between align-items-center bg-info rounded p-1">
+                                    <span class="text-dark small"><i class="bi bi-grip-vertical"></i> {{
+                                        agent.user.username }}</span>
+                                    <a href="{% url 'agent_detail' agent.id %}" class="btn btn-sm btn-dark py-0"
+                                        style="font-size: 0.7rem;">
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary text-warning">
+                <i class="bi bi-person-x"></i> Atanmamış Agentlar
+            </div>
+            <div class="card-body p-2 agent-container" id="unassigned-agents" data-team-id="none">
+                {% for agent in unassigned_agents %}
+                <div class="agent-card mb-1" data-id="{{ agent.id }}" data-type="agent">
+                    <div class="d-flex justify-content-between align-items-center bg-info rounded p-1">
+                        <span class="text-dark small"><i class="bi bi-grip-vertical"></i> {{ agent.user.username
+                            }}</span>
+                        <a href="{% url 'agent_detail' agent.id %}" class="btn btn-sm btn-dark py-0"
+                            style="font-size: 0.7rem;">
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Hierarchy Area -->
+    <div class="col-md-9">
+        <div class="row" id="department-container">
+            {% for dept in departments %}
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card bg-dark border-secondary h-100">
+                    <div class="card-header border-secondary bg-opacity-25 bg-secondary d-flex justify-content-between">
+                        <span class="fw-bold text-truncate"><i class="bi bi-building"></i> {{ dept.name }}</span>
+                    </div>
+                    <!-- Horizontal Layout using CSS Grid -->
+                    <div class="card-body p-2"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; align-content: start;">
+                        <!-- Teams are items in the grid -->
+                        {% for team in dept.teams.all %}
+                        <div class="card bg-secondary text-white mb-2 team-card h-100" data-id="{{ team.id }}">
+                            <div class="card-body p-2">
+                                <!-- Collapsible Header -->
+                                <div class="d-flex justify-content-between align-items-center cursor-pointer"
+                                    data-bs-toggle="collapse" data-bs-target="#team-collapse-{{ team.id }}"
+                                    aria-expanded="false" aria-controls="team-collapse-{{ team.id }}">
+                                    <span class="fw-bold"><i class="bi bi-people-fill"></i> {{ team.name }}</span>
+                                    <i class="bi bi-chevron-down transition-icon"></i>
+                                </div>
+
+                                <!-- Collapsible Content -->
+                                <div class="collapse mt-2" id="team-collapse-{{ team.id }}">
+                                    <div class="agent-container p-1 bg-dark rounded" id="team-{{ team.id }}"
+                                        data-team-id="{{ team.id }}" style="min-height: 40px;">
+                                        {% for agent in team.agentprofile_set.all %}
+                                        <div class="agent-card mb-1" data-id="{{ agent.id }}" data-type="agent">
+                                            <div
+                                                class="d-flex justify-content-between align-items-center bg-info rounded p-1">
+                                                <span class="text-dark small text-truncate" style="max-width: 120px;">
+                                                    <i class="bi bi-grip-vertical"></i> {{ agent.user.username }}
+                                                </span>
+                                                <a href="{% url 'agent_detail' agent.id %}"
+                                                    class="btn btn-sm btn-dark py-0 ms-1" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-arrow-right"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addDepartmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{% url 'create_department' %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Departman Ekle</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" name="name" class="form-control bg-dark text-white border-secondary"
+                        placeholder="Departman Adı (Örn: Customer Service)" required>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="submit" class="btn btn-success">Oluştur</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+    let pendingChanges = [];
+
+    // Initialize Agent Draggables
+    const agentContainers = document.querySelectorAll('.agent-container');
+    agentContainers.forEach(container => {
+        new Sortable(container, {
+            group: 'agents', // Shared group name allows dragging between containers
+            animation: 150,
+            ghostClass: 'bg-warning',
+            fallbackOnBody: true, // Crucial for nested flex/grid contexts
+            swapThreshold: 0.65,
+            onEnd: function (evt) {
+                const itemEl = evt.item;
+                const newTeamId = evt.to.getAttribute('data-team-id');
+                const agentId = itemEl.getAttribute('data-id');
+
+                // Track only if actually moved to a different container
+                if (evt.to !== evt.from) {
+                    trackChange('agent', agentId, 'team', newTeamId);
+                }
+            }
+        });
+    });
+
+    function trackChange(itemType, itemId, parentType, parentId) {
+        pendingChanges = pendingChanges.filter(c => !(c.item_type === itemType && c.item_id === itemId));
+        pendingChanges.push({
+            item_type: itemType,
+            item_id: itemId,
+            parent_type: parentType,
+            parent_id: parentId
+        });
+        updateSaveButton();
+    }
+
+    function updateSaveButton() {
+        const btn = document.getElementById('save-btn');
+        const badge = document.getElementById('change-count');
+        badge.innerText = pendingChanges.length;
+        if (pendingChanges.length > 0) {
+            btn.classList.remove('disabled');
+        } else {
+            btn.classList.add('disabled');
+        }
+    }
+
+    function saveAllChanges() {
+        if (pendingChanges.length === 0) return;
+
+        const btn = document.getElementById('save-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Kaydediliyor...';
+        btn.disabled = true;
+
+        fetch('{% url "update_hierarchy" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(pendingChanges)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => { throw new Error(data.message || "Sunucu Hatası"); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    pendingChanges = [];
+                    // updateSaveButton(); // Cannot call this here as badge is removed from DOM by innerHTML below
+                    btn.innerHTML = '<i class="bi bi-check-lg"></i> Kaydedildi!';
+                    setTimeout(() => {
+                        // Restore original structure (which includes the badge span)
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        // Now update the badge (pendingChanges is empty, so it becomes 0)
+                        updateSaveButton();
+                        // updateSaveButton also sets disabled state, so ensure we re-disable if empty
+                        if (pendingChanges.length === 0) btn.classList.add('disabled');
+                    }, 2000);
+                } else {
+                    alert('Hata: ' + data.message);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(err => {
+                alert('İşlem Başarısız: ' + err.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+    }
+
+    // Add custom styles for arrow rotation
+    document.addEventListener('DOMContentLoaded', function () {
+        const collapseElements = document.querySelectorAll('.collapse');
+        collapseElements.forEach(el => {
+            el.addEventListener('show.bs.collapse', function () {
+                const toggler = document.querySelector(`[data-bs-target="#${this.id}"]`);
+                if (toggler) toggler.setAttribute('aria-expanded', 'true');
+            });
+            el.addEventListener('hide.bs.collapse', function () {
+                const toggler = document.querySelector(`[data-bs-target="#${this.id}"]`);
+                if (toggler) toggler.setAttribute('aria-expanded', 'false');
+            });
+        });
+    });
+</script>
+
+<style>
+    .agent-card {
+        cursor: grab;
+    }
+
+    .agent-card:active {
+        cursor: grabbing;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .transition-icon {
+        transition: transform 0.3s ease;
+    }
+
+    /* Rotate icon when aria-expanded is true */
+    [aria-expanded="true"] .transition-icon {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}

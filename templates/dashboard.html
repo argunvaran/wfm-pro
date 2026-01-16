@@ -1,23 +1,71 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2 class="mb-4">Haftalık Özet</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Haftalık Özet</h2>
+
+    <!-- Admin Actions -->
+    {% if request.user.role == 'admin' or request.user.is_superuser %}
+    <div class="d-flex gap-2">
+        <a href="{% url 'forecast' %}" class="btn btn-primary">
+            <i class="bi bi-graph-up"></i> Tahminle
+        </a>
+        <form method="post" action="{% url 'schedule' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" name="generate" class="btn btn-success">
+                <i class="bi bi-calendar-check"></i> Vardiya Atama
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
 
 <div class="row mb-4">
+    <!-- Call Volume Metrics (Admin Only) -->
+    {% if request.user.role == 'admin' or request.user.is_superuser %}
     <div class="col-md-6">
         <div class="card p-3">
             <h5 class="card-title text-muted">Bugün Beklenen Çağrı</h5>
             <h2 class="fw-bold">{{ total_offered }}</h2>
         </div>
     </div>
-    <div class="col-md-6">
+    {% endif %}
+
+    <!-- Active Shifts (Everyone - Scoped by Backend) -->
+    <!-- Active Shifts -->
+    <div class="col-md-{% if request.user.role == 'admin' or request.user.is_superuser %}6{% else %}4{% endif %}">
         <div class="card p-3">
             <h5 class="card-title text-muted">Aktif Vardiyalar</h5>
             <h2 class="fw-bold">{{ active_shifts }}</h2>
+            {% if request.user.role == 'manager' %}
+            <small class="text-secondary">Ekibiniz (Bugün)</small>
+            {% elif request.user.role == 'agent' %}
+            <small class="text-secondary">Sizin (Bugün)</small>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Personal/Team Metrics (Non-Admin) -->
+    {% if request.user.role != 'admin' and not request.user.is_superuser %}
+    <div class="col-md-4">
+        <div class="card p-3">
+            <h5 class="card-title text-muted">Toplam Çağrı</h5>
+            <h2 class="fw-bold">{{ personal_call_count }}</h2>
+            <small class="text-secondary">Son 7 Gün</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3">
+            <h5 class="card-title text-muted">Ortalama Süre (AHT)</h5>
+            <h2 class="fw-bold">{{ personal_avg_duration }} sn</h2>
+            <small class="text-secondary">Son 7 Gün</small>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
+<!-- call Chart (Admin Only) -->
+{% if request.user.role == 'admin' or request.user.is_superuser %}
 <div class="card p-4">
     <h5>Son 7 Günlük Çağrı Hacmi</h5>
     <canvas id="callChart" height="100"></canvas>
@@ -37,7 +85,7 @@
         backgroundColor: 'rgba(99, 102, 241, 0.2)',
         tension: 0.4,
         fill: true
-            }]
+    }]
         },
     options: {
         scales: {
@@ -52,4 +100,6 @@
     }
     });
 </script>
+{% endif %}
+
 {% endblock %}

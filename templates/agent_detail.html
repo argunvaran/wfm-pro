@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="display-1 text-primary mb-3">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <h3 class="card-title">{{ agent.user.get_full_name|default:agent.user.username }}</h3>
+                    <p class="text-muted">{{ agent.user.email }}</p>
+
+                    <hr>
+
+                    <div class="text-start">
+                        <p><strong>Employee ID:</strong> {{ agent.employee_id|default:"-" }}</p>
+                        <p><strong>Departman:</strong> {{ agent.team.department.name|default:"-" }}</p>
+                        <p><strong>Takım:</strong> {{ agent.team.name|default:"Atanmamış" }}</p>
+                        <p><strong>İşe Başlama:</strong> {{ agent.hire_date|default:"-" }}</p>
+                    </div>
+
+                    {% if can_edit %}
+                    <hr class="border-secondary">
+                    <button class="btn btn-primary w-100" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#editForm">
+                        <i class="bi bi-pencil-square"></i> Düzenle
+                    </button>
+
+                    <div class="collapse mt-3" id="editForm">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_info">
+
+                            <div class="mb-2 text-start">
+                                <label class="form-label small text-muted">Email</label>
+                                <input type="email" name="email" class="form-control form-control-sm"
+                                    value="{{ agent.user.email }}">
+                            </div>
+
+                            <div class="mb-2 text-start">
+                                <label class="form-label small text-muted">Employee ID</label>
+                                <input type="text" name="employee_id" class="form-control form-control-sm"
+                                    value="{{ agent.employee_id|default:'' }}">
+                            </div>
+
+                            <div class="mb-2 text-start">
+                                <label class="form-label small text-muted">İşe Başlama</label>
+                                <input type="date" name="hire_date" class="form-control form-control-sm"
+                                    value="{{ agent.hire_date|date:'Y-m-d' }}">
+                            </div>
+
+                            <button type="submit" class="btn btn-success btn-sm w-100">Kaydet</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-tools"></i> Yetenekler</h5>
+                </div>
+                <div class="card-body">
+                    {% for askill in agent.agentskill_set.all %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ askill.skill.name }}</span>
+                        <div class="progress w-50" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                style="width: {% widthratio askill.level 5 100 %}%"></div>
+                        </div>
+                        <span class="badge bg-secondary">{{ askill.level }}/5</span>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Yetenek tanımlanmamış.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-clock-history"></i> Vardiya Bilgisi</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Vardiya Tipi:</strong> {{ agent.shift_type.name|default:"Varsayılan Yok" }}</p>
+                    <!-- Future: Last 5 shifts table -->
+                </div>
+            </div>
+
+            <!-- Role Management (Admin Only) -->
+            {% if request.user.role == 'admin' or request.user.is_superuser %}
+            <div class="card shadow-sm mt-4 border-danger">
+                <div class="card-header border-danger text-danger">
+                    <h5 class="card-title mb-0"><i class="bi bi-shield-lock"></i> Rol Yönetimi (Admin)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Bu kullanıcının sistemdeki yetki seviyesini belirleyin.</p>
+                    <form method="post" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_role">
+                        <select name="role" class="form-select">
+                            <option value="agent" {% if agent.user.role=='agent' %}selected{% endif %}>Agent</option>
+                            <option value="manager" {% if agent.user.role=='manager' %}selected{% endif %}>Takım Lideri
+                                (Manager)</option>
+                            <option value="admin" {% if agent.user.role=='admin' %}selected{% endif %}>Yönetici (Admin)
+                            </option>
+                        </select>
+                        <button type="submit" class="btn btn-outline-danger">Güncelle</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

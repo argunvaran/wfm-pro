@@ -4,8 +4,8 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Tahminleme & Planlama</h2>
     <div class="d-flex gap-2">
-        <form method="post" class="d-flex gap-2">
-            {% csrf_token %}
+        <form method="get" class="d-flex gap-2">
+            <!-- Filter by Queue -->
             <select name="queue_id" class="form-select bg-dark text-white border-secondary"
                 onchange="this.form.submit()">
                 <option value="">Tüm Kuyruklar</option>
@@ -13,6 +13,23 @@
                 <option value="{{ q.id }}" {% if selected_queue_id == q.id %}selected{% endif %}>{{ q.name }}</option>
                 {% endfor %}
             </select>
+
+            <input type="date" name="start_date" value="{{ start_date }}"
+                class="form-control bg-dark text-white border-secondary" style="width: auto;">
+            <input type="date" name="end_date" value="{{ end_date }}"
+                class="form-control bg-dark text-white border-secondary" style="width: auto;">
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-filter"></i>
+            </button>
+        </form>
+
+        <form method="post" class="d-flex gap-2">
+            {% csrf_token %}
+            <input type="hidden" name="queue_id" value="{{ selected_queue_id|default:'' }}">
+            <input type="hidden" name="start_date" value="{{ start_date }}">
+            <input type="hidden" name="end_date" value="{{ end_date }}">
+
             <button type="submit" name="update_actuals" class="btn btn-outline-info">
                 <i class="bi bi-arrow-clockwise"></i> Verileri Güncelle
             </button>
@@ -28,7 +45,19 @@
 
 <p class="text-muted">Dönem: {{ start_date }} - {{ end_date }}</p>
 
-<!-- Chart -->
+<!-- Controls -->
+<div class="d-flex justify-content-end mb-2">
+    <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="chartType" id="typeLine" autocomplete="off" checked
+            onchange="setChartType('line')">
+        <label class="btn btn-outline-secondary btn-sm" for="typeLine"><i class="bi bi-graph-up"></i> Çizgi</label>
+
+        <input type="radio" class="btn-check" name="chartType" id="typeBar" autocomplete="off"
+            onchange="setChartType('bar')">
+        <label class="btn btn-outline-secondary btn-sm" for="typeBar"><i class="bi bi-bar-chart"></i> Sütun</label>
+    </div>
+</div>
+
 <div class="card p-4">
     <canvas id="forecastChart" style="max-height: 400px;"></canvas>
 </div>
@@ -45,7 +74,9 @@
     const forecasts = JSON.parse(document.getElementById('chart-forecast').textContent);
 
     const ctx = document.getElementById('forecastChart');
-    new Chart(ctx, {
+
+    // Assign to window for access
+    window.myForecastChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -54,23 +85,26 @@
                     label: 'Gerçekleşen',
                     data: actuals,
                     borderColor: '#06b6d4', // Cyan
-                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                    backgroundColor: 'rgba(6, 182, 212, 0.5)', // More opacity for bar
                     tension: 0.3,
-                    pointRadius: 2
+                    pointRadius: 2,
+                    borderWidth: 2
                 },
                 {
                     label: 'Tahmin (Forecast)',
                     data: forecasts,
                     borderColor: '#a855f7', // Purple
-                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                    backgroundColor: 'rgba(168, 85, 247, 0.5)',
                     borderDash: [5, 5],
                     tension: 0.3,
-                    pointRadius: 2
+                    pointRadius: 2,
+                    borderWidth: 2
                 }
             ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: {
                 mode: 'index',
                 intersect: false,
@@ -85,5 +119,24 @@
             }
         }
     });
+
+    function setChartType(type) {
+        window.myForecastChart.config.type = type;
+
+        // Adjust style slightly for bars if needed
+        if (type === 'bar') {
+            window.myForecastChart.data.datasets.forEach(ds => {
+                ds.borderWidth = 0; // Remove border for cleaner bar look? Or keep it.
+                ds.borderRadius = 3;
+            });
+        } else {
+            window.myForecastChart.data.datasets.forEach(ds => {
+                ds.borderWidth = 2;
+                ds.borderRadius = 0;
+            });
+        }
+
+        window.myForecastChart.update();
+    }
 </script>
 {% endblock %}

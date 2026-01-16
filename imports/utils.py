@@ -1,9 +1,9 @@
-import pandas as pd
-from agents.models import AgentProfile, Team, Skill, AgentSkill
+from agents.models import AgentProfile, Team, Skill, AgentSkill, Department
 from users.models import User
 from calls.models import CallVolume, Queue
 from django.db import transaction
 import datetime
+import pandas as pd
 
 def process_agent_import(file_path):
     df = pd.read_csv(file_path)
@@ -23,37 +23,55 @@ def process_agent_import(file_path):
                     logs.append(f"Row {index}: Missing agent_id or username. Skipped.")
                     continue
 
-                # 2. Get or Create Team
+                # 2. Hierarchy: Department -> Team
+                department = None
+                if 'department' in row and pd.notna(row['department']):
+                    dept_name = str(row['department']).strip()
+                    department, _ = Department.objects.get_or_create(name=dept_name)
+
                 team = None
                 if 'team' in row and pd.notna(row['team']):
-                    team_name = row['team']
-                    team, _ = Team.objects.get_or_create(name=team_name)
+                    team_name = str(row['team']).strip()
+                    team, created_team = Team.objects.get_or_create(name=team_name)
+                    
+                    # Link Team to Department if provided
+                    if department:
+                        team.department = department
+                        team.save()
                 
                 # 3. Create/Get User
                 email = row.get('email', '') if pd.notna(row.get('email')) else ''
                 first_name = row.get('firstname', '') if pd.notna(row.get('firstname')) else ''
                 last_name = row.get('lastname', '') if pd.notna(row.get('lastname')) else ''
                 
+                # Role Handling
+                role = 'agent' # Default
+                if 'role' in row and pd.notna(row['role']):
+                    r = str(row['role']).strip().lower()
+                    if r in ['admin', 'manager', 'agent']:
+                        role = r
+                
                 user, created_user = User.objects.get_or_create(username=username, defaults={
                     'email': email,
                     'first_name': first_name,
                     'last_name': last_name,
-                    'role': 'agent',
+                    'role': role,
                     'force_password_change': True
                 })
                 
+                if not created_user:
+                    # Update existing user role if provided in import
+                    if 'role' in row and pd.notna(row['role']):
+                         user.role = role
+                         user.save()
+
                 if created_user:
                     user.set_password('Wfm1234!')
                     user.save()
-                    logs.append(f"Created user {username}.")
-                else:
-                    # Update fields if provided? User didn't ask, but good practice. 
-                    pass
+                    logs.append(f"Created user {username} with role {role}.")
                 
-                # 4. Create/Get Profile
+                # 4. Create/Get Profile (ALWAYS ensure profile exists)
                 profile, created_profile = AgentProfile.objects.get_or_create(user=user)
-                if created_profile:
-                   pass
                 
                 # Update attributes
                 if 'employee_id' in row and pd.notna(row['employee_id']):
@@ -62,6 +80,18 @@ def process_agent_import(file_path):
                 if team:
                     profile.team = team
                 
+                # Managed Teams (for Managers)
+                if role == 'manager' and 'managed_teams' in row and pd.notna(row['managed_teams']):
+                    m_teams_str = str(row['managed_teams'])
+                    # clean previous managed teams? Let's assume add/update.
+                    # profile.managed_teams.clear() # Uncomment if we want to reset
+                    
+                    for t_name in m_teams_str.split(','): # Assume comma separated
+                        t_name = t_name.strip()
+                        if t_name:
+                            m_team, _ = Team.objects.get_or_create(name=t_name)
+                            profile.managed_teams.add(m_team)
+                            
                 profile.save()
                 
                 # 5. Skills

@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-person-badge"></i> Kullanıcı ve Rol Yönetimi</h2>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Kullanıcı</th>
+                            <th>Email</th>
+                            <th>Mevcut Rol</th>
+                            <th>Rolü Değiştir</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td class="ps-3 align-middle">
+                                <div class="fw-bold">{{ u.username }}</div>
+                                <small class="text-muted">{{ u.get_full_name }}</small>
+                            </td>
+                            <td class="align-middle">{{ u.email }}</td>
+                            <td class="align-middle">
+                                {% if u.role == 'admin' %}
+                                <span class="badge bg-danger">Yönetici</span>
+                                {% elif u.role == 'manager' %}
+                                <span class="badge bg-warning text-dark">Takım Lideri</span>
+                                {% else %}
+                                <span class="badge bg-primary">Agent</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">
+                                <form method="post" class="d-flex gap-2" id="form-{{ u.id }}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="update_role">
+                                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                                    <select name="role" class="form-select form-select-sm" style="width: 150px;">
+                                        <option value="agent" {% if u.role == 'agent' %}selected{% endif %}>Agent</option>
+                                        <option value="manager" {% if u.role == 'manager' %}selected{% endif %}>Takım
+                                            Lideri</option>
+                                        <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Yönetici
+                                        </option>
+                                    </select>
+                                </form>
+                            </td>
+                            <td class="align-middle text-end">
+                                <div class="d-flex justify-content-end align-items-center gap-2">
+                                    {% if u.agent_profile %}
+                                    <a href="{% url 'agent_detail' u.agent_profile.id %}"
+                                        class="btn btn-sm btn-secondary">
+                                        <i class="bi bi-card-list"></i> Detay
+                                    </a>
+                                    {% if u.role == 'manager' %}
+                                    <button type="button" class="btn btn-sm btn-outline-info"
+                                        onclick='openTeamModal("{{ u.id }}", [{% for t in u.agent_profile.managed_teams.all %}"{{ t.id }}",{% endfor %}])'>
+                                        <i class="bi bi-people"></i> Takımlar
+                                    </button>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="badge bg-secondary">Profil Yok</span>
+                                    {% endif %}
+
+                                    <button type="submit" form="form-{{ u.id }}" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-check-lg"></i> Kaydet
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">Kullanıcı bulunamadı.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Selection Modal (Manager Only) -->
+<div class="modal fade" id="teamSelectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Takım Seçimi (Manager)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bu Takım Lideri hangi takımları yönetecek?</p>
+                <form id="teamSelectionForm" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_managed_teams">
+                    <input type="hidden" name="user_id" id="modalUserId">
+                    <div id="teamCheckboxes">
+                        <!-- Populated by JS -->
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="submitTeamSelection()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ALL_TEAMS = [
+        {% for t in all_teams %}
+    {
+        id: "{{ t.id }}",
+            name: "{{ t.name }}",
+                dept: "{{ t.department.name|default:'Departmansız' }}"
+    },
+    {% endfor %}
+    ];
+
+    function openTeamModal(userId, currentTeamIds) {
+        document.getElementById('modalUserId').value = userId;
+        const container = document.getElementById('teamCheckboxes');
+        container.innerHTML = ''; // Clear previous
+
+        // Ensure ALL_TEAMS is defined
+        if (typeof ALL_TEAMS !== 'undefined') {
+            // Group by Department
+            const teamsByDept = {};
+            ALL_TEAMS.forEach(team => {
+                if (!teamsByDept[team.dept]) {
+                    teamsByDept[team.dept] = [];
+                }
+                teamsByDept[team.dept].push(team);
+            });
+
+            // Render Groups
+            for (const [deptName, teams] of Object.entries(teamsByDept)) {
+                // Dept Header
+                const header = `<h6 class="text-info mt-3 border-bottom border-secondary pb-1 small">${deptName}</h6>`;
+                container.insertAdjacentHTML('beforeend', header);
+
+                // Teams in Dept
+                teams.forEach(team => {
+                    const isChecked = currentTeamIds.includes(team.id) ? 'checked' : '';
+                    const html = `
+                        <div class="form-check ms-2">
+                            <input class="form-check-input" type="checkbox" name="team_ids" value="${team.id}" id="team-${team.id}" ${isChecked}>
+                            <label class="form-check-label" for="team-${team.id}">
+                                ${team.name}
+                            </label>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+            }
+
+            // Show empty message if no teams
+            if (Object.keys(teamsByDept).length === 0) {
+                container.innerHTML = '<p class="text-muted small">Tanımlı takım bulunamadı.</p>';
+            }
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('teamSelectionModal'));
+        modal.show();
+    }
+
+    function submitTeamSelection() {
+        document.getElementById('teamSelectionForm').submit();
+    }
+
+    // Simple improved UX: Enable 'Save' only on change
+    document.querySelectorAll('select[name="role"]').forEach(select => {
+        select.addEventListener('change', function () {
+            const form = this.closest('form');
+            const row = this.closest('tr');
+            const btn = row.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.classList.remove('btn-outline-success');
+                btn.classList.add('btn-success');
+                btn.innerHTML = '<i class="bi bi-save"></i> Kaydet (Değişti)';
+            }
+        });
+    });
+</script>
+{% endblock %}

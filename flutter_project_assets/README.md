@@ -1,33 +1,46 @@
+# WFM Pro Mobile Walkthrough
 
-# WFM Pro Mobile App (Flutter)
+## Overview
+We have generated a Flutter project structure in `flutter_project_assets/`.
 
-Bu klasör, WFM Pro WFM sisteminin Flutter tabanlı mobil uygulaması için gerekli **kaynak kodları** içerir. Bilgisayarınızda Flutter yüklü olmadığı için projeyi çalıştırılabilir halde değil, "kopyala-yapıştır" yapmaya hazır kod blokları halinde hazırladım.
-
-## Nasıl Kurulur?
-
-1.  **Flutter Kurulumu:** [flutter.dev](https://flutter.dev) adresinden Flutter SDK'sını indirip kurun.
-2.  **Proje Oluşturma:** Terminalde şu komutu çalıştırın:
+## Prerequisites
+1.  **Flutter SDK**: Ensure you have Flutter installed (`flutter --version`).
+2.  **Existing Project**: Create a new Flutter project if you haven't already:
     ```bash
     flutter create wfm_mobile
     ```
-3.  **Dosyaları Kopyalama:**
-    *   Bu klasördeki `lib` içeriğini, yeni oluşturduğunuz projenin `lib` klasörüne kopyalayın.
-    *   `pubspec.yaml` dosyasına şu paketleri ekleyin:
-        ```yaml
-        dependencies:
-          flutter:
-            sdk: flutter
-          http: ^1.1.0
-          shared_preferences: ^2.2.0
-          intl: ^0.18.1
-        ```
-4.  **Çalıştırma:**
+
+## Installation
+1.  Navigate to your generated assets:
+    ```bash
+    cd c:\Code\wfm-pro\flutter_project_assets
+    ```
+2.  Copy the `lib` folder into your Flutter project's root, overwriting the existing `lib`.
+
+3.  Update your `pubspec.yaml` in the Flutter project to include these dependencies:
+    ```yaml
+    dependencies:
+      flutter:
+        sdk: flutter
+      http: ^1.1.0
+      shared_preferences: ^2.2.0
+      intl: ^0.18.1
+    ```
+
+4.  Run `flutter pub get`.
+
+## Running
+1.  Connect a device or start an emulator.
+2.  Run:
     ```bash
     flutter run
     ```
 
-## Yapı
+## Usage
+1.  **Login Screen**:
+    *   **Workspace**: Enter your tenant subdomain (e.g., `tenant1`).
+    *   **Username/Password**: Your WFM Pro credentials.
+    *   *Note*: The app attempts to connect to `https://tenant1.wfm-pro.com`. Ensure DNS is working!
 
-*   `main.dart`: Uygulamanın giriş noktası.
-*   `services/api_service.dart`: Django backend ile konuşan servis.
-*   `screens/`: Giriş, Dashboard ve Vardiya ekranları.
+2.  **Dashboard**: Shows your next shift and notifications.
+3.  **Schedule**: Shows your full shift list.

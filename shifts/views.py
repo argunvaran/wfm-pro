@@ -7,6 +7,7 @@ from calls.models import CallVolume
 from agents.models import AgentProfile
 from datetime import date, timedelta
 from django.contrib import messages
+from agents.utils import get_allowed_agents
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -23,9 +24,29 @@ from .rta_utils import get_live_adherence_data
 @login_required
 def schedule_view(request):
     today = date.today()
-    start_of_week = today - timedelta(days=today.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
     
+    # Date Filtering
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    if start_date_str:
+        try:
+            start_of_week = date.fromisoformat(start_date_str)
+        except ValueError:
+            start_of_week = today - timedelta(days=today.weekday())
+    else:
+        start_of_week = today - timedelta(days=today.weekday())
+
+    if end_date_str:
+        try:
+            end_of_week = date.fromisoformat(end_date_str)
+        except ValueError:
+             # Default to 7 days view if only start is given, or if no params
+            end_of_week = start_of_week + timedelta(days=6)
+    else:
+        end_of_week = start_of_week + timedelta(days=6)
+
+
     if request.method == 'POST':
         if 'generate' in request.POST:
             # Generate Schedule Action (Re-run)
@@ -33,14 +54,20 @@ def schedule_view(request):
             messages.success(request, f"{count} shifts generated successfully.")
             return redirect('schedule')
             
-    shifts = Shift.objects.filter(date__range=[start_of_week, end_of_week]).order_by('date', 'start_time')
+    # RBAC: Get allowed agents
+    agents = get_allowed_agents(request.user)
     
-    # Pivot for table view? (Agent x Day)
-    # Simple list for now is easier to code quickly, but user wanted "Haftalık çizelgeyi bir tablo".
-    # Let's try to pivot.
+    # Search Filtering
+    search_query = request.GET.get('q', '')
+    if search_query:
+        agents = agents.filter(user__username__icontains=search_query)
+
+    # Optimization: Filter shifts only for allowed agents
+    shifts = Shift.objects.filter(date__range=[start_of_week, end_of_week], agent__in=agents).order_by('date', 'start_time')
     
-    agents = AgentProfile.objects.all()
-    week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
+    # Generate needed dates for headers
+    delta = (end_of_week - start_of_week).days
+    week_dates = [start_of_week + timedelta(days=i) for i in range(delta + 1)]
     
     schedule_table = []
     for agent in agents:

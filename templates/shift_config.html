@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card p-3 mb-4">
+            <h5 class="mb-3">Vardiya Tipi Düzenle</h5>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_type">
+                <div class="mb-3">
+                    <label class="form-label">Vardiya Adı</label>
+                    <input type="text" name="name" class="form-control" value="{{ shift_type.name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Süre (Saat)</label>
+                    <input type="number" step="0.5" name="duration_hours" class="form-control"
+                        value="{{ shift_type.duration_hours }}" required>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">En Erken Başla</label>
+                        <input type="time" name="start_time_min" class="form-control"
+                            value="{{ shift_type.start_time_min|time:'H:i' }}">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">En Geç Başla</label>
+                        <input type="time" name="start_time_max" class="form-control"
+                            value="{{ shift_type.start_time_max|time:'H:i' }}">
+                    </div>
+                </div>
+                <button class="btn btn-primary w-100">Değişiklikleri Kaydet</button>
+            </form>
+            <hr>
+            <form method="post" onsubmit="return confirm('Bu vardiya tipini silmek istediğinize emin misiniz?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_type">
+                <button class="btn btn-outline-danger w-100">Bu Tipi Sil</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Vardiya Kuralları (Molalar)</h5>
+                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addActivityModal">
+                    <i class="bi bi-plus-lg"></i> Kural Ekle
+                </button>
+            </div>
+
+            <p class="text-muted small">
+                Bu vardiya tipine atanan her vardiya için aşağıdaki aktiviteler otomatik olarak (sırasıyla) oluşturulur.
+                Aralardaki boşluklar "Çalışma (Work)" olarak doldurulur.
+            </p>
+
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>Sıra (Dk)</th>
+                        <th>Aktivite</th>
+                        <th>Süre (Dk)</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for act in activities %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-secondary">+{{ act.start_offset_minutes }} dk</span>
+                            <small class="text-muted d-block">Vardiya başından</small>
+                        </td>
+                        <td>
+                            <span
+                                class="badge {% if act.activity_type == 'LUNCH' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ act.get_activity_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ act.duration_minutes }} dk</td>
+                        <td>
+                            <form method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_activity">
+                                <input type="hidden" name="activity_id" value="{{ act.id }}">
+                                <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            Henüz kural tanımlanmamış. Sadece "Work" oluşturulur.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Activity Modal -->
+<div class="modal fade" id="addActivityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Kural Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_activity">
+                    <div class="mb-3">
+                        <label class="form-label">Aktivite Tipi</label>
+                        <select name="activity_type" class="form-select" required>
+                            <option value="BREAK">Mola (Break)</option>
+                            <option value="LUNCH">Öğle Yemeği (Lunch)</option>
+                            <option value="WORK">Çalışma (Work - Özel Durumlar İçin)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ne Zaman Başlayacak? (Dakika)</label>
+                        <input type="number" name="start_offset" class="form-control" placeholder="Örn: 240 (4. saatte)"
+                            required>
+                        <div class="form-text">Vardiya başlangıcından kaç dakika sonra başlayacak?</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Süre (Dakika)</label>
+                        <input type="number" name="duration" class="form-control" value="60" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -71,90 +71,86 @@ def dashboard(request):
 
 @login_required
 def forecast_view(request):
-    try:
-        # Date Params
-        start_date_str = request.GET.get('start_date')
-        end_date_str = request.GET.get('end_date')
+    # Date Params
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    today = date.today()
+    
+    if start_date_str:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+    else:
+        start_date = today - timedelta(days=today.weekday())
         
-        today = date.today()
-        
-        if start_date_str:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        else:
-            start_date = today - timedelta(days=today.weekday())
+    if end_date_str:
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    else:
+        end_date = start_date + timedelta(days=6)
+    
+    if request.method == 'POST':
+        if 'update_actuals' in request.POST:
+            aggregate_actuals()
+            messages.success(request, "Gerçekleşen veriler güncellendi.")
             
-        if end_date_str:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        else:
-            end_date = start_date + timedelta(days=6)
-        
-        if request.method == 'POST':
-            if 'update_actuals' in request.POST:
-                aggregate_actuals()
-                messages.success(request, "Gerçekleşen veriler güncellendi.")
-                
-            elif 'generate_forecast' in request.POST:
-                if start_date < today:
-                    messages.error(request, "Hata: Geçmiş tarihli tahmin oluşturulamaz.")
-                    return redirect(f"{request.path}?start_date={start_date}&end_date={end_date}")
+        elif 'generate_forecast' in request.POST:
+            # 1. Past Date Constraint
+            if start_date < today:
+                messages.error(request, "Hata: Geçmiş tarihli tahmin oluşturulamaz.")
+                return redirect(f"{request.path}?start_date={start_date}&end_date={end_date}")
 
-                model_type = request.POST.get('forecast_model', 'simple_avg')
-                count = generate_forecast_data(start_date, end_date, model_type=model_type)
-                messages.success(request, f"Tahmin oluşturuldu: {count} kayıt.")
-                
-            elif 'run_schedule' in request.POST:
-                count = generate_schedule(None, start_date, end_date)
-                messages.success(request, f"{count} vardiya atandı.")
-                return redirect('schedule')
+            model_type = request.POST.get('forecast_model', 'simple_avg')
             
-            return redirect(f"{request.path}?start_date={start_date}&end_date={end_date}")
+            count = generate_forecast_data(start_date, end_date, model_type=model_type)
+            messages.success(request, f"Tahmin oluşturuldu: {count} kayıt.")
+            
+        elif 'run_schedule' in request.POST:
+            count = generate_schedule(None, start_date, end_date)
+            messages.success(request, f"{count} vardiya atandı.")
+            return redirect('schedule')
+        
+        return redirect(f"{request.path}?start_date={start_date}&end_date={end_date}")
 
-        # Chart Data Setup
-        queue_id = request.POST.get('queue_id') or request.GET.get('queue_id')
-        q_filter = {}
-        if queue_id and queue_id.isdigit():
-            q_filter['queue_id'] = int(queue_id)
-        
-        vols = CallVolume.objects.filter(date__range=[start_date, end_date], **q_filter).order_by('date', 'interval_start')
-        
-        queues = Queue.objects.all()
-        
-        data_map = {}
-        is_daily_view = (start_date != end_date)
-        
-        for v in vols:
-            if is_daily_view:
-                key = v.date.strftime('%Y-%m-%d')
-            else:
-                key = v.interval_start.strftime('%H:%M')
-                
-            if key not in data_map:
-                data_map[key] = {'actual': 0, 'forecast': 0}
+    # Chart Data Setup
+    queue_id = request.POST.get('queue_id') or request.GET.get('queue_id')
+    q_filter = {}
+    if queue_id and queue_id.isdigit():
+        q_filter['queue_id'] = int(queue_id)
+    
+    vols = CallVolume.objects.filter(date__range=[start_date, end_date], **q_filter).order_by('date', 'interval_start')
+    
+    queues = Queue.objects.all()
+    
+    data_map = {}
+    is_daily_view = (start_date != end_date)
+    
+    for v in vols:
+        if is_daily_view:
+            key = v.date.strftime('%Y-%m-%d')
+        else:
+            key = v.interval_start.strftime('%H:%M')
             
-            if v.is_forecast:
-                data_map[key]['forecast'] = (data_map[key]['forecast'] or 0) + v.calls_offered
-            else:
-                data_map[key]['actual'] = (data_map[key]['actual'] or 0) + v.calls_offered
-                
-        labels = sorted(data_map.keys())
-        actual_data = [data_map[k]['actual'] for k in labels]
-        forecast_data = [data_map[k]['forecast'] for k in labels]
+        if key not in data_map:
+            data_map[key] = {'actual': 0, 'forecast': 0}
         
-        context = {
-            'start_date': start_date.strftime('%Y-%m-%d'),
-            'end_date': end_date.strftime('%Y-%m-%d'),
-            'labels': labels,
-            'actual_data': actual_data,
-            'forecast_data': forecast_data,
-            'queues': queues,
-            'selected_queue_id': int(queue_id) if queue_id and queue_id.isdigit() else None
-        }
-        return render(request, 'forecast.html', context)
-        
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        return render(request, 'base.html', {'messages': [{'tags': 'danger', 'message': f'CRITICAL FORECAST ERROR: {str(e)}'}]})
+        if v.is_forecast:
+            data_map[key]['forecast'] = (data_map[key]['forecast'] or 0) + v.calls_offered
+        else:
+            data_map[key]['actual'] = (data_map[key]['actual'] or 0) + v.calls_offered
+            
+    labels = sorted(data_map.keys())
+    actual_data = [data_map[k]['actual'] for k in labels]
+    forecast_data = [data_map[k]['forecast'] for k in labels]
+    
+    context = {
+        'start_date': start_date.strftime('%Y-%m-%d'),
+        'end_date': end_date.strftime('%Y-%m-%d'),
+        'labels': labels,
+        'actual_data': actual_data,
+        'forecast_data': forecast_data,
+        'queues': queues,
+        'selected_queue_id': int(queue_id) if queue_id and queue_id.isdigit() else None
+    }
+    return render(request, 'forecast.html', context)
 
 @login_required
 def heatmap_view(request):

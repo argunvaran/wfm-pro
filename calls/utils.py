@@ -176,13 +176,35 @@ def generate_forecast_data(start_date, end_date, model_type='simple_avg'):
                 unique_queues = set([k[0] for k in history_map.keys()])
                 
                 for q_id in unique_queues:
-                    key = (q_id, wd, t_val)
+                    # key = (q_id, wd, t_val)
                     
-                    if key not in history_map:
-                        continue
+                    found_data = False
+                    calls_hist = []
+                    aht_hist = []
+                    
+                    # 1. Try Exact Match (Weekday + Time)
+                    if key in history_map:
+                         calls_hist = sorted(history_map[key]['calls'], key=lambda x: x[0], reverse=True)
+                         aht_hist = sorted(history_map[key]['aht'], key=lambda x: x[0], reverse=True)
+                         found_data = True
+                    else:
+                        # 2. Fallback: Try "Any Weekday" for this Time (General Pattern)
+                        # Useful for sparse data (e.g. uploaded only Monday, trying to predict Tuesday)
+                        fallback_calls = []
+                        fallback_aht = []
+                        for k, v in history_map.items():
+                            # k = (q_id, wd, t)
+                            if k[0] == q_id and k[2] == t_val:
+                                fallback_calls.extend(v['calls'])
+                                fallback_aht.extend(v['aht'])
                         
-                    calls_hist = sorted(history_map[key]['calls'], key=lambda x: x[0], reverse=True)
-                    aht_hist = sorted(history_map[key]['aht'], key=lambda x: x[0], reverse=True)
+                        if fallback_calls:
+                            calls_hist = sorted(fallback_calls, key=lambda x: x[0], reverse=True)
+                            aht_hist = sorted(fallback_aht, key=lambda x: x[0], reverse=True)
+                            found_data = True
+
+                    if not found_data:
+                        continue
                     
                     # Calculate Forecast Value
                     forecast_calls = 0

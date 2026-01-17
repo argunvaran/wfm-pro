@@ -150,7 +150,7 @@
         </div>
     </nav>
 
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and request.tenant.schema_name != 'public' %}
     <!-- Sidebar -->
     <div class="sidebar d-none d-md-block" id="sidebar">
         <div class="d-flex flex-column px-3">

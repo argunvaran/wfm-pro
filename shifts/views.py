@@ -49,6 +49,11 @@ def schedule_view(request):
 
     if request.method == 'POST':
         if 'generate' in request.POST:
+            # 1. Past Schedule Constraint
+            if start_of_week < today:
+                messages.error(request, "Hata: Geçmişe dönük vardiya ataması yapılamaz. Sadece ileri tarihler planlanabilir.")
+                return redirect('schedule')
+
             # Generate Schedule Action (Re-run)
             count = generate_schedule(None, start_of_week, end_of_week) 
             messages.success(request, f"{count} shifts generated successfully.")

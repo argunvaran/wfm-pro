@@ -10,7 +10,7 @@
                 onchange="this.form.submit()">
                 <option value="">Tüm Kuyruklar</option>
                 {% for q in queues %}
-                <option value="{{ q.id }}" {% if selected_queue_id == q.id %}selected{% endif %}>{{ q.name }}</option>
+                <option value="{{ q.id }}" {% if selected_queue_id==q.id %}selected{% endif %}>{{ q.name }}</option>
                 {% endfor %}
             </select>
 
@@ -30,6 +30,13 @@
             <input type="hidden" name="start_date" value="{{ start_date }}">
             <input type="hidden" name="end_date" value="{{ end_date }}">
 
+            <!-- Model Selection -->
+            <select name="forecast_model" class="form-select bg-dark text-white border-secondary" style="width: auto;">
+                <option value="simple_avg">Basit Ortalama</option>
+                <option value="weighted_avg">Ağırlıklı Ortalama (Son 4 Hafta)</option>
+                <option value="erlang_c" disabled>Erlang C (Otomatik Kullanımda)</option>
+            </select>
+
             <button type="submit" name="update_actuals" class="btn btn-outline-info">
                 <i class="bi bi-arrow-clockwise"></i> Verileri Güncelle
             </button>
@@ -42,6 +49,15 @@
         </form>
     </div>
 </div>
+
+<script>
+    // Prevent Past Dates in DatePickers
+    document.addEventListener('DOMContentLoaded', function () {
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementsByName("start_date")[0].setAttribute('min', today);
+        document.getElementsByName("end_date")[0].setAttribute('min', today);
+    });
+</script>
 
 <p class="text-muted">Dönem: {{ start_date }} - {{ end_date }}</p>
 

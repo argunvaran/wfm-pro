@@ -121,57 +121,106 @@ def aggregate_actuals():
                         )
     return True
 
-def generate_forecast_data(start_date, end_date):
+def generate_forecast_data(start_date, end_date, model_type='simple_avg'):
     """
-    Generates Forecast CallVolume based on historical average (15-min granularity).
+    Generates Forecast CallVolume based on historical data.
+    Models:
+    - simple_avg: Average of all available history for matching Weekday/Time.
+    - weighted_avg: Weighted average of last 4 weeks (40%, 30%, 20%, 10%).
     """
-    # 1. Identify "learning" period (e.g. last 4 weeks)
-    # Simple logic: Take all available actuals, average by Weekday + Time.
     
-    # weekday -> time -> {sums, count}
-    stats = {} 
+    # 1. Fetch History
+    # We fetch all non-forecast volumes
+    actuals = CallVolume.objects.filter(is_forecast=False).order_by('date')
     
-    actuals = CallVolume.objects.filter(is_forecast=False)
+    # Structure: (queue_id, weekday, time) -> [list of values]
+    history_map = {} 
     
     for av in actuals:
         wd = av.date.weekday()
-        t = av.interval_start # Time object
+        t = av.interval_start
         key = (av.queue_id, wd, t)
         
-        if key not in stats:
-            stats[key] = {'calls_sum': 0, 'aht_sum': 0, 'samples': 0}
+        if key not in history_map:
+            history_map[key] = {'calls': [], 'aht': []}
         
-        stats[key]['calls_sum'] += av.calls_offered
-        stats[key]['aht_sum'] += av.aht_seconds
-        stats[key]['samples'] += 1
+        # We store tuples of (date, value) to sort if needed
+        history_map[key]['calls'].append((av.date, av.calls_offered))
+        history_map[key]['aht'].append((av.date, av.aht_seconds))
 
     # 2. Generate for target range
     forecasts = []
-    
     current = start_date
+    
+    # Weights for last 4 occurrences (Most recent -> Least recent)
+    WEIGHTS = [0.4, 0.3, 0.2, 0.1] 
+    
     while current <= end_date:
         wd = current.weekday()
+        
+        # Find unique times & queues existing in history for this weekday
+        # Optimization: We could iterate 00:00-23:45, but let's stick to what we have data for vs full range.
+        # Actually better to iterate full 24h range to ensure coverage if we have partial data.
+        
         for h in range(24):
             for m in [0, 15, 30, 45]:
                 t_val = time(h, m)
                 
-                # Check known keys for current weekday + time
-                unique_queues = set([k[0] for k in stats.keys()])
+                # Identify queues that have ANY data for this WD/Time
+                # This logic is a bit expensive in loop. 
+                # Better: Pre-calculate the set of (queue, wd, time) keys.
+                # But let's check history_map directly.
+                
+                # Get all unique queues from history map to iterate
+                # (Ideally we'd use Queue.objects.all(), for now let's use data-driven)
+                unique_queues = set([k[0] for k in history_map.keys()])
                 
                 for q_id in unique_queues:
                     key = (q_id, wd, t_val)
-                    if key in stats:
-                        avg_calls = stats[key]['calls_sum'] / stats[key]['samples']
-                        avg_aht = stats[key]['aht_sum'] / stats[key]['samples']
+                    
+                    if key not in history_map:
+                        continue
                         
+                    calls_hist = sorted(history_map[key]['calls'], key=lambda x: x[0], reverse=True)
+                    aht_hist = sorted(history_map[key]['aht'], key=lambda x: x[0], reverse=True)
+                    
+                    # Calculate Forecast Value
+                    forecast_calls = 0
+                    forecast_aht = 0
+                    
+                    if model_type == 'weighted_avg':
+                        # Take last 4
+                        sample_calls = [x[1] for x in calls_hist[:4]]
+                        sample_aht = [x[1] for x in aht_hist[:4]]
+                        
+                        # Normalize weights if samples < 4
+                        w_subset = WEIGHTS[:len(sample_calls)]
+                        w_sum = sum(w_subset)
+                        
+                        if w_sum > 0:
+                            forecast_calls = sum([s * w for s, w in zip(sample_calls, w_subset)]) / w_sum
+                            forecast_aht = sum([s * w for s, w in zip(sample_aht, w_subset)]) / w_sum
+                        else:
+                            forecast_calls = 0 # Should not happen if len > 0
+                            
+                    else: # simple_avg
+                        # Simple Mean
+                        vals_c = [x[1] for x in calls_hist]
+                        vals_a = [x[1] for x in aht_hist]
+                        if vals_c:
+                            forecast_calls = sum(vals_c) / len(vals_c)
+                            forecast_aht = sum(vals_a) / len(vals_a)
+                    
+                    if forecast_calls > 0:
                         forecasts.append(CallVolume(
                             queue_id=q_id,
                             date=current,
                             interval_start=t_val,
-                            calls_offered=int(avg_calls),
-                            aht_seconds=int(avg_aht),
+                            calls_offered=int(round(forecast_calls)),
+                            aht_seconds=int(round(forecast_aht)),
                             is_forecast=True
                         ))
+                        
         current += timedelta(days=1)
         
     with transaction.atomic():

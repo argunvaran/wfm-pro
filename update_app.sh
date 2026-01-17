@@ -1,43 +1,40 @@
 #!/bin/bash
 
-# V6 Safe Update Script
-# Updates code and DB without destroying containers/SSL
+# V7 Safe Update Script
+# Updates code, DB, and static files safely
 
 echo "======================================================="
-echo "   WFM-PRO: SAFE UPDATE PROTOCOL (V6)"
+echo "   WFM-PRO: SAFE UPDATE PROTOCOL (V7)"
 echo "======================================================="
 
 # 1. Pull Code
 echo "--> 1. Pulling latest changes..."
 git pull origin master
 
-# 2. Update Python Dependencies (if any)
-# We use --no-deps to avoid reinstalling everything, just check for new ones
-# But usually we need to rebuild if requirements changed.
-# For this V6 change, we added logical changes.
-# If we need to rebuild: docker-compose build web worker
-# Let's assume safely we might need to rebuild if requirements changed, but 
-# 'docker-compose up -d --build' does that safely without losing volumes.
-echo "--> 2. Rebuilding services (Safe mode)..."
-docker-compose up -d --build web worker
+# 2. Rebuild Container (Safe)
+# This respects the existing DB volume, so data is safe.
+echo "--> 2. Rebuilding services..."
+sudo docker-compose up -d --build web worker
 
-# 3. Create Migrations (Since we added fields)
-echo "--> 3. Creating Database Migrations..."
-docker-compose exec web python manage.py makemigrations
+# 3. Apply Migrations
+# Standard migrate covering both public and tenants (if configured)
+echo "--> 3. Applying Database Migrations..."
+sudo docker-compose exec web python manage.py migrate
 
-# 4. Migrate DB
-echo "--> 4. Applying Migrations..."
-docker-compose exec web python manage.py migrate_schemas --shared
+# 4. Collect Static Files
+# Crucial for CSS/JS updates to be visible via Nginx
+echo "--> 4. Collecting Static Files..."
+sudo docker-compose exec web python manage.py collectstatic --noinput
 
-# 5. Update Plans
+# 5. Update Plans (Optional but good for safety)
 echo "--> 5. Updating Subscription Plans..."
-docker-compose exec web python init_plans.py
+sudo docker-compose exec web python init_plans.py
 
-# 6. Restart to ensure all code is loaded
-echo "--> 6. Restarting Services..."
-docker-compose restart web worker
+# 6. Restart Worker to pick up new code
+echo "--> 6. Restarting Worker..."
+sudo docker-compose restart worker
 
 echo "======================================================="
 echo "   UPDATE COMPLETE! ✅"
-echo "   SSL Certificates: PROTECTED (Not touched)"
+echo "   Your data and SSL certs were NOT touched."
 echo "======================================================="

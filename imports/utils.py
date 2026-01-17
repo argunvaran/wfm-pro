@@ -219,6 +219,38 @@ def process_call_import(file_path):
                         'customer_number': customer_number
                     }
                 )
+                
+                # 6. INFERRED SHIFT LOGIC (User Requirement)
+                # If agent took a call, they must have been working.
+                # If no shift exists, create a "Default Shift" so they appear on the schedule/payroll.
+                if agent_profile:
+                    from shifts.models import Shift
+                    call_date = timestamp.date()
+                    
+                    # Check cache or DB (for performance, we rely on DB get_or_create logic here)
+                    # To avoid excessive DB hits, we could cache "agent_id:date" in a set outside logic.
+                    # But for now, get_or_create is safe enough.
+                    
+                    # We only create if NOT exists. We don't overwrite if manual shift exists.
+                    if not Shift.objects.filter(agent=agent_profile, date=call_date).exists():
+                         # Create Inferred Shift covering this call? 
+                         # Or just 09-18 Default? User said: "o gun sadece vardiyası varmış şeklinde gözükmeli"
+                         # Let's assign Standard 09:00 - 18:00
+                         
+                         start_t = datetime.strptime("09:00", "%H:%M").time()
+                         end_t = datetime.strptime("18:00", "%H:%M").time()
+                         
+                         shift, created_shift = Shift.objects.get_or_create(
+                             agent=agent_profile,
+                             date=call_date,
+                             defaults={
+                                 'start_time': start_t,
+                                 'end_time': end_t,
+                                 'break_start': datetime.strptime("13:00", "%H:%M").time()
+                             }
+                         )
+                         if created_shift:
+                             logs.append(f"Inferred Shift created for {agent_profile.user.username} on {call_date}.")
                         
             except Exception as e:
                 logs.append(f"Error row {index}: {str(e)}")

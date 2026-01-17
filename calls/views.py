@@ -92,9 +92,19 @@ def forecast_view(request):
         if 'update_actuals' in request.POST:
             aggregate_actuals()
             messages.success(request, "Gerçekleşen veriler güncellendi.")
+            
         elif 'generate_forecast' in request.POST:
-            count = generate_forecast_data(start_date, end_date)
-            messages.success(request, f"Tahmin oluşturuldu: {count} kayıt.")
+            # 1. Past Date Constraint
+            if start_date < today:
+                messages.error(request, "Hata: Geçmiş tarihli tahmin oluşturulamaz. Sadece gelecek tarihler için tahmin yapılabilir.")
+                return redirect(f"{request.path}?start_date={start_date}&end_date={end_date}")
+
+            # 2. Forecasting Model Upgrade
+            model_type = request.POST.get('forecast_model', 'simple_avg')
+            
+            count = generate_forecast_data(start_date, end_date, model_type=model_type)
+            messages.success(request, f"Tahmin oluşturuldu: {count} kayıt. (Model: {model_type})")
+            
         elif 'run_schedule' in request.POST:
             count = generate_schedule(None, start_date, end_date)
             messages.success(request, f"{count} vardiya atandı. Yönlendiriliyor...")

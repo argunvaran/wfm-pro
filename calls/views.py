@@ -6,13 +6,13 @@ from datetime import date, timedelta, datetime, time
 from django.db.models import Sum, Avg, Count
 import json
 from django.contrib import messages
-from .utils import aggregate_actuals, generate_forecast_data
+# from .utils import aggregate_actuals, generate_forecast_data
 # We need to import generate_schedule. Careful with circular imports.
 # shifts/utils imports calls/models. calls/views imports shifts/utils.
 # This loop: calls.views -> shifts.utils -> calls.models. (Safe)
 # calls.views -> calls.models. (Safe)
-from shifts.utils import generate_schedule
-from agents.utils import get_allowed_agents
+# from shifts.utils import generate_schedule
+# from agents.utils import get_allowed_agents
 
 @login_required
 def dashboard(request):

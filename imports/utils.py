@@ -146,6 +146,45 @@ def process_call_import(file_path):
                         logs.append(f"Auto-created agent user {username} from call log.")
                         
                     agent_profile, _ = AgentProfile.objects.get_or_create(user=user)
+                    
+                    # 2.1 Update Agent Team/Department if provided
+                    department = None
+                    if 'department' in row and pd.notna(row['department']):
+                        dept_name = str(row['department']).strip()
+                        if dept_name:
+                            department, _ = Department.objects.get_or_create(name=dept_name)
+                    
+                    team = None
+                    if 'team' in row and pd.notna(row['team']):
+                        team_name = str(row['team']).strip()
+                        if team_name:
+                            team, _ = Team.objects.get_or_create(name=team_name)
+                            if department and not team.department:
+                                team.department = department
+                                team.save()
+                            
+                            # Assign agent to team
+                            if agent_profile.team != team:
+                                agent_profile.team = team
+                                agent_profile.save()
+                                logs.append(f"Assigned agent {username} to team {team_name}.")
+
+                    # 2.2 Team Leader (Manage Team)
+                    if team and 'team_leader' in row and pd.notna(row['team_leader']):
+                        tl_username = str(row['team_leader']).strip()
+                        if tl_username:
+                            tl_user, tl_created = User.objects.get_or_create(username=tl_username, defaults={
+                                'role': 'manager',
+                                'force_password_change': True
+                            })
+                            if tl_created:
+                                tl_user.set_password('Wfm1234!')
+                                tl_user.save()
+                                logs.append(f"Auto-created Team Leader {tl_username}.")
+                            
+                            tl_profile, _ = AgentProfile.objects.get_or_create(user=tl_user)
+                            # Add team to managed_teams
+                            tl_profile.managed_teams.add(team)
                 
                 # 3. Call Details
                 # timestamp/call_time
@@ -155,15 +194,16 @@ def process_call_import(file_path):
                 
                 duration = int(row.get('duration', 0))
                 
+                # Customer Number
+                customer_number = None
+                if 'customer_number' in row and pd.notna(row['customer_number']):
+                    customer_number = str(row['customer_number']).strip()
+
                 # 4. Unique ID
                 call_id = None
                 if 'call_id' in row and pd.notna(row['call_id']):
                     call_id = str(row['call_id'])
                 else:
-                    # Generate unique ID based on properties to be deterministic if possible?
-                    # Or just random if we trust the source to provide IDs?
-                    # User said: "agentid biz bir unique id üretelim ayrıca... çağrılara da unique id atayalım"
-                    # "Assign unique id to calls".
                     import uuid
                     call_id = f"gen-{uuid.uuid4()}"
                 
@@ -175,7 +215,8 @@ def process_call_import(file_path):
                         'timestamp': timestamp,
                         'duration': duration,
                         'queue': queue,
-                        'agent': agent_profile
+                        'agent': agent_profile,
+                        'customer_number': customer_number
                     }
                 )
                         

@@ -1,0 +1,54 @@
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-body">
+            <div class="d-flex justify-content-between text-center">
+                {% for state, count in counts.items %}
+                <div class="px-3">
+                    <h2 class="mb-0">{{ count }}</h2>
+                    <small class="text-muted">{{ state }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for agent_state in agent_states %}
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="avatar-circle me-3 bg-secondary text-white d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px; border-radius: 50%;">
+                        {{ agent_state.agent_profile.user.first_name|make_list|first|upper }}{{
+                        agent_state.agent_profile.user.last_name|make_list|first|upper }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ agent_state.agent_profile.user.get_full_name }}</h6>
+                        <small class="text-muted">{{ agent_state.agent_profile.employee_id }}</small>
+                    </div>
+                </div>
+
+                {% with s=agent_state.state|lower %}
+                <div class="p-2 rounded text-center text-white fw-bold
+                    {% if s == 'ready' %}bg-success
+                    {% elif s == 'talking' %}bg-warning
+                    {% elif s == 'pause' %}bg-info
+                    {% else %}bg-secondary{% endif %}">
+                    {{ agent_state.state }}
+                </div>
+                {% endwith %}
+
+                <div class="mt-2 text-center text-muted small">
+                    <i class="bi bi-clock"></i> {{ agent_state.since|timesince }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center text-muted">
+        <p>Henüz veri yok.</p>
+    </div>
+    {% endfor %}
+</div>

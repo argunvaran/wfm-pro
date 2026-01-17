@@ -21,42 +21,41 @@ class CustomLoginView(LoginView):
             context['is_public_tenant'] = True
         return context
 
-def test_signup(request):
-    if request.method == 'POST':
-        # Create Test Tenant
-        # Use a random subdomain
-        sub_part = uuid.uuid4().hex[:6]
-        tenant_name = f"Test Tenant {sub_part}"
-        schema_name = f"tenant_{sub_part}"
-        domain_url = f"{sub_part}.localhost"
-        
-        # Create Client (Trigger schema creation)
-        client = Client(schema_name=schema_name, name=tenant_name, paid_until=None, is_active=True)
-        client.save()
-        
-        # Create Domain
-        domain = Domain()
-        domain.domain = domain_url
-        domain.tenant = client
-        domain.is_primary = True
-        domain.save()
-        
-        # Create Admin User inside the tenant schema
-        try:
-            with schema_context(schema_name):
-                username = f"admin" # Simple admin username for the tenant
-                password = "Wfm1234!" # Default Password
-                user = User.objects.create_user(username=username, password=password, role='admin')
-                user.force_password_change = True
-                user.save()
-                print(f"User created for {schema_name}: {user.username}")
-        except Exception as e:
-            print(f"Error creating user in schema {schema_name}: {e}")
-            # Ensure we don't leave a broken tenant/domain if user creation fails
-            # But for test_signup we might just let it be or cleanup.
-            pass
-        
-        # Redirect to the new tenant's login page
-        return redirect(f"http://{domain_url}:8000/login/?new_tenant=true")
+def register_view(request):
+    plan_id = request.GET.get('plan_id')
     
-    return redirect('login')
+    if request.method == 'POST':
+        company_name = request.POST.get('company_name')
+        subdomain = request.POST.get('subdomain').lower()
+        admin_username = request.POST.get('admin_username')
+        admin_email = request.POST.get('admin_email')
+        admin_password = request.POST.get('admin_password')
+        plan_id = request.POST.get('plan_id') # Get from hidden input
+
+        # Basic Validation
+        if Client.objects.filter(schema_name=subdomain).exists():
+            return render(request, 'register.html', {'error': 'Bu alan adı (subdomain) zaten kullanılıyor.', 'plan_id': plan_id})
+            
+        import re
+        if not re.match(r'^[a-z0-9]+$', subdomain):
+             return render(request, 'register.html', {'error': 'Subdomain sadece harf ve rakam içerebilir.', 'plan_id': plan_id})
+
+        try:
+            # Store in Session
+            request.session['reg_data'] = {
+                'company_name': company_name,
+                'subdomain': subdomain,
+                'admin_username': admin_username,
+                'admin_email': admin_email,
+                'admin_password': admin_password,
+                'plan_id': plan_id
+            }
+            request.session.modified = True
+
+            # Redirect to Payment
+            return redirect('init_payment')
+
+        except Exception as e:
+            return render(request, 'register.html', {'error': f'Hata oluştu: {str(e)}', 'plan_id': plan_id})
+
+    return render(request, 'register.html', {'plan_id': plan_id})

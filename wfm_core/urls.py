@@ -1,14 +1,14 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth.views import LogoutView
-from calls.views import dashboard, forecast_view, heatmap_view, integration_view
+from calls.views import dashboard, forecast_view, heatmap_view, integration_view, live_monitor_view, live_monitor_partial
 from shifts.views import schedule_view, rta_view
 from imports.views import import_data
 from agents.views import (
     agent_list, settings_view, create_team, create_skill, create_queue, create_shift_type, edit_shift_type,
     org_chart_view, update_hierarchy, create_department, agent_detail_view, user_management_view
 )
-from users.views import CustomLoginView, test_signup
+from users.views import CustomLoginView, register_view
 from calls.api import EventPushViewSet, IntegrationConfigViewSet
 from mobile.api import MobileShiftViewSet # Example reuse if needed
 from django.conf import settings
@@ -40,12 +40,15 @@ urlpatterns = [
     path('heatmap/', heatmap_view, name='heatmap'),
     path('billing/', include('billing.urls')),
     path('login/', CustomLoginView.as_view(), name='login'),
+    path('register/', register_view, name='register'), # New Registration
     
     path('api/v1/', include(router.urls)), # New Standard API
     
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('test-signup/', test_signup, name='test_signup'),
     
+    path('live-monitor/', live_monitor_view, name='live_monitor'),
+    path('live-monitor/partial/', live_monitor_partial, name='live_monitor_partial'),
+
     path('schedule/', schedule_view, name='schedule'),
     path('agents/', agent_list, name='agents'),
     path('agents/<int:pk>/', agent_detail_view, name='agent_detail'),

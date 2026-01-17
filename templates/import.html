@@ -11,11 +11,13 @@
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 {{ form|crispy }}
-                
+
                 <div class="mt-3">
                     <small class="text-muted d-block mb-1">Örnek CSV Dosyaları:</small>
-                    <a href="{% url 'download_sample_csv' 'agents' %}" class="btn btn-sm btn-outline-info me-2">Agent Örneği</a>
-                    <a href="{% url 'download_sample_csv' 'calls' %}" class="btn btn-sm btn-outline-info">Çağrı Örneği</a>
+                    <a href="{% url 'download_sample_csv' 'agents' %}?v=2"
+                        class="btn btn-sm btn-outline-info me-2">Agent Örneği</a>
+                    <a href="{% url 'download_sample_csv' 'calls' %}?v=2" class="btn btn-sm btn-outline-info">Çağrı
+                        Örneği</a>
                 </div>
 
                 <button type="submit" class="btn btn-primary mt-3">Yükle ve İşle</button>

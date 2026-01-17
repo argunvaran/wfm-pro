@@ -62,7 +62,7 @@ def download_sample_csv(request, type):
         writer.writerow(['ahmet.yilmaz', 'Ahmet', 'Yılmaz', 'ahmet@example.com', 'Müşteri Hizmetleri', 'Satış Takımı', 'Satış:5|İkna:4', 'EMP1001'])
         writer.writerow(['mehmet.demir', 'Mehmet', 'Demir', 'mehmet@example.com', '', '', 'Teknik:3', 'EMP1002']) # Default/Empty example
     elif type == 'calls':
-        writer.writerow(['call_id', 'timestamp', 'duration', 'agent', 'queue'])
-        writer.writerow(['unique-id-1', '2026-01-01 09:30:00', '120', 'ahmet.yilmaz', 'Satış Hattı'])
+        writer.writerow(['call_id', 'timestamp', 'duration', 'agent', 'queue', 'team', 'department', 'team_leader', 'customer_number'])
+        writer.writerow(['unique-id-1', '2026-01-01 09:30:00', '120', 'ahmet.yilmaz', 'Satış Hattı', 'Satış Takımı 1', 'Satış Departmanı', 'satis.muduru', '+905551234567'])
         
     return response

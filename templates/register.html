@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-lg border-0">
+            <div class="card-body p-5">
+                <div class="text-center mb-5">
+                    <h2 class="fw-bold">Yeni Hesap Oluştur</h2>
+                    <p class="text-muted">Kendi WFM Pro platformunuzu oluşturun.</p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="plan_id" value="{{ plan_id }}">
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-building"></i> Şirket Bilgileri</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Şirket Adı</label>
+                        <input type="text" name="company_name" class="form-control" placeholder="Örn: Acme A.Ş."
+                            required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Alt Alan Adı (Subdomain)</label>
+                        <div class="input-group">
+                            <input type="text" name="subdomain" class="form-control" placeholder="acme"
+                                pattern="[a-z0-9]+" title="Sadece küçük harv ve rakam (boşluksuz)" required>
+                            <span class="input-group-text bg-light text-muted" id="domainSuffix">.wfm-pro.com</span>
+                        </div>
+                        <div class="form-text">Müşteri paneli giriş adresiniz olacaktır.</div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-person-badge"></i> Yönetici Bilgileri</h5>
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Kullanıcı Adı</label>
+                            <input type="text" name="admin_username" class="form-control" placeholder="admin" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="admin_email" class="form-control" placeholder="admin@sirket.com"
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Parola</label>
+                        <input type="password" name="admin_password" class="form-control" required>
+                    </div>
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                            Hesabı Oluştur <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'login' %}" class="text-decoration-none">Zaten hesabınız var mı? Giriş Yapın</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const host = window.location.hostname;
+        // Adjust display for localhost testing
+        if (host.includes('localhost') || host.includes('127.0.0.1')) {
+            document.getElementById('domainSuffix').textContent = '.localhost';
+        }
+    });
+</script>
+{% endblock %}

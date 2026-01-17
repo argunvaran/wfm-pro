@@ -1,0 +1,5 @@
+call_id,timestamp,duration,agent,queue,team,department,team_leader,customer_number
+TEST-001,2026-01-17 10:00:00,180,agent.test1,Support Queue,Alpha Team,Customer Support,leader.alpha,+905551112233
+TEST-002,2026-01-17 10:15:00,120,agent.test1,Support Queue,Alpha Team,Customer Support,leader.alpha,+905551112233
+TEST-003,2026-01-17 11:00:00,300,agent.test2,Sales Queue,Beta Team,Sales,leader.beta,+905558889900
+TEST-004,2026-01-17 11:30:00,60,agent.test3,,,not_leader,,

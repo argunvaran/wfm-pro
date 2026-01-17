@@ -62,15 +62,32 @@ def schedule_view(request):
     if search_query:
         agents = agents.filter(user__username__icontains=search_query)
 
+    # Search Filtering
+    search_query = request.GET.get('q', '')
+    if search_query:
+        agents = agents.filter(user__username__icontains=search_query)
+
     # Optimization: Filter shifts only for allowed agents
-    shifts = Shift.objects.filter(date__range=[start_of_week, end_of_week], agent__in=agents).order_by('date', 'start_time')
+    # But first, Pagination: Slice the agents list
+    from django.core.paginator import Paginator
+    paginator = Paginator(agents, 20) # 20 Agents per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Use only paginated agents for further processing
+    agents_page = page_obj.object_list
+    
+    # Filter shifts only for the VISIBLE agents on this page
+    # This prevents loading all shifts for all agents
+    shifts = Shift.objects.filter(date__range=[start_of_week, end_of_week], agent__in=agents_page).order_by('date', 'start_time')
     
     # Generate needed dates for headers
     delta = (end_of_week - start_of_week).days
     week_dates = [start_of_week + timedelta(days=i) for i in range(delta + 1)]
     
     schedule_table = []
-    for agent in agents:
+    # Loop through the PAGINATED agents_page, not all agents
+    for agent in agents_page:
         agent_row = {'agent': agent, 'shifts': []}
         for d in week_dates:
             s = shifts.filter(agent=agent, date=d).first()
@@ -81,7 +98,8 @@ def schedule_view(request):
         'week_dates': week_dates,
         'schedule_table': schedule_table,
         'start_date': start_of_week,
-        'end_date': end_of_week
+        'end_date': end_of_week,
+        'page_obj': page_obj # Pass pagination object
     }
     return render(request, 'schedule.html', context)
 

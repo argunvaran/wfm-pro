@@ -24,25 +24,35 @@
                     <span class="input-group-text" id="basic-addon3">https://</span>
                     <input type="text" class="form-control" id="tenantInput" placeholder="şirketadı"
                         aria-describedby="basic-addon3">
-                    <span class="input-group-text" id="domainSuffix">.domain.com</span>
+                    <span class="input-group-text" id="domainSuffix">.wfm-pro.com</span>
                 </div>
                 <button onclick="goToTenant()" class="btn btn-outline-light w-100 btn-sm">Panele Git</button>
             </div>
 
             <script>
-                // Dynamically set the domain suffix in the UI (hiding port for cleaner look as requested)
-                document.addEventListener('DOMContentLoaded', function() {
-                    const host = window.location.hostname; // hostname excludes port
-                    document.getElementById('domainSuffix').textContent = '.' + host;
-                });
+                // Visuals strictly requested to be .wfm-pro.com
+                // We do NOT overwrite this with .localhost in the UI anymore.
 
                 function goToTenant() {
                     const tenant = document.getElementById('tenantInput').value;
                     if (tenant) {
                         const protocol = window.location.protocol;
-                        const host = window.location.host; // host includes port if present
-                        // Construct new URL: protocol//tenant.host/login/
-                         window.location.href = `${protocol}//${tenant}.${host}/login/`;
+                        const host = window.location.hostname;
+                        const port = window.location.port;
+
+                        // Functionally, we still need to work on the current machine
+                        let targetHost = `${tenant}.wfm-pro.com`;
+
+                        // If we are actually developing on localhost, we must preserve functionality
+                        // effectively "spoofing" the redirect to work in this env
+                        if (host.includes('localhost') || host.includes('127.0.0.1')) {
+                            targetHost = `${tenant}.localhost`;
+                            if (port) {
+                                targetHost += `:${port}`;
+                            }
+                        }
+
+                        window.location.href = `${protocol}//${targetHost}/login/`;
                     }
                 }
             </script>

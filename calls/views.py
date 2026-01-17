@@ -233,7 +233,7 @@ def heatmap_view(request):
         'selected_queue_id': int(queue_id) if queue_id and queue_id.isdigit() else None
     }
     return render(request, 'heatmap.html', context)
-from .models import CallVolume, Queue, IntegrationConfig
+from .models import CallVolume, Queue, IntegrationConfig, RealTimeAgentState
 import uuid
 
 @login_required
@@ -253,3 +253,28 @@ def integration_view(request):
         'config': config
     }
     return render(request, 'integrations.html', context)
+
+@login_required
+def live_monitor_view(request):
+    """Main view for Live Monitor Dashboard"""
+    # Just render the container, HTMX will load the content
+    return render(request, 'calls/live_monitor.html')
+
+@login_required
+def live_monitor_partial(request):
+    """Partial view for Agent Grid (Polled via HTMX)"""
+    # Get all active agent states
+    # This assumes RealTimeAgentState is created/updated by events
+    agent_states = RealTimeAgentState.objects.select_related('agent_profile', 'agent_profile__user').all().order_by('state', 'agent_profile__user__first_name')
+    
+    # Calculate summary counts
+    state_counts = agent_states.values('state').annotate(count=Count('id'))
+    counts = {s['state']: s['count'] for s in state_counts}
+    
+    context = {
+        'agent_states': agent_states,
+        'counts': counts,
+        'last_updated': datetime.now()
+    }
+    # Note: We need to create 'calls/partials/agent_grid.html'
+    return render(request, 'calls/partials/agent_grid.html', context)

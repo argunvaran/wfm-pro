@@ -1,38 +1,64 @@
-{% extends 'base.html' %}
+{% extends 'reports/charts_base.html' %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Günlük SLA Özeti</h2>
-    <form class="d-flex gap-2">
-        <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
-        <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
-        <button type="submit" class="btn btn-primary">Filtrele</button>
-        <button type="submit" name="export" value="true" class="btn btn-success"><i
-                class="bi bi-file-earmark-excel"></i> Excel İndir</button>
-    </form>
+{% block report_title %}SLA & Çağrı Analizi{% endblock %}
+{% block report_subtitle %}Günlük bazda çağrı hacimleri ve servis seviyesi metrikleri.{% endblock %}
+
+{% block report_content %}
+<!-- Filters -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Başlangıç Tarihi</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Bitiş Tarihi</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-filter"></i> Filtrele
+                </button>
+                <button type="submit" name="export" value="true"
+                    class="btn btn-outline-secondary rounded-pill px-4 ms-2">
+                    <i class="bi bi-download"></i> Excel/CSV
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
-<div class="card">
+<!-- Main Chart -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 fw-bold">SLA Trend Analizi</div>
     <div class="card-body">
+        <canvas id="slaChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
                     <tr>
-                        <th>Tarih</th>
-                        <th>Toplam Çağrı (Gelen)</th>
-                        <th>Ort. AHT (Saniye)</th>
+                        <th class="ps-4">Tarih</th>
+                        <th>Gelen Çağrı (Offered)</th>
+                        <th>Ort. AHT (sn)</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in data %}
                     <tr>
-                        <td>{{ row.date }}</td>
+                        <td class="ps-4 fw-bold">{{ row.date }}</td>
                         <td>{{ row.total_offered }}</td>
-                        <td>{{ row.avg_aht|floatformat:1 }}</td>
+                        <td>{{ row.avg_aht|default:"-"|floatformat:0 }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="3" class="text-center py-4">Veri bulunamadı.</td>
+                        <td colspan="3" class="text-center py-4 text-muted">Veri bulunamadı.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -40,4 +66,62 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const labels = JSON.parse('{{ chart_dates|safe }}');
+    const offeredData = JSON.parse('{{ chart_offered|safe }}');
+    const ahtData = JSON.parse('{{ chart_aht|safe }}');
+
+    new Chart(document.getElementById('slaChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Gelen Çağrı',
+                    data: offeredData,
+                    type: 'bar',
+                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Ortalama Süre (AHT)',
+                    data: ahtData,
+                    type: 'line',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: false,
+                    tension: 0.3,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: { display: true, text: 'Çağrı Adedi' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Saniye (AHT)' }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

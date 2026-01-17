@@ -1,0 +1,131 @@
+{% extends 'reports/charts_base.html' %}
+
+{% block report_title %}Müşteri Yolculuğu & Tekrar Aramaları{% endblock %}
+{% block report_subtitle %}Aynı ay içinde birden fazla arama yapan müşterilerin analizi.{% endblock %}
+
+{% block report_content %}
+<!-- Filters -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Başlangıç Tarihi</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Bitiş Tarihi</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-filter"></i> Filtrele
+                </button>
+                <button type="submit" name="export" value="true"
+                    class="btn btn-outline-secondary rounded-pill px-4 ms-2">
+                    <i class="bi bi-download"></i> Excel/CSV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Hints -->
+<div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex align-items-center mb-4">
+    <i class="bi bi-info-circle-fill text-info me-2 fs-4"></i>
+    <div>
+        <strong>Tekrar Eden Aramalar:</strong> Tabloda <span class="badge bg-warning text-dark">Tekrar Eden</span>
+        etiketi olan müşteriler, seçili tarihler arasında sorunu çözülmemiş veya birden fazla kez aramış olabilir.
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Müşteri Numarası</th>
+                        <th>Toplam Arama</th>
+                        <th>Durum</th>
+                        <th>Toplam Süre (dk)</th>
+                        <th>Son Görüşme</th>
+                        <th>Ort. Süre (sn)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr class="{% if row.is_repeat %}bg-warning bg-opacity-10{% endif %}">
+                        <td class="ps-4 fw-bold font-monospace">{{ row.customer_number }}</td>
+                        <td>
+                            <span
+                                class="badge rounded-pill {% if row.total_calls > 2 %}bg-danger{% elif row.total_calls > 1 %}bg-warning text-dark{% else %}bg-secondary{% endif %} px-3">
+                                {{ row.total_calls }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if row.is_repeat %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat"></i> Tekrar
+                                Eden</span>
+                            {% else %}
+                            <span class="badge bg-success"><i class="bi bi-check2"></i> Tekil Arama</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.total_duration|floatformat:0 }} sn</td>
+                        <td class="text-muted small">{{ row.last_call|date:"d M Y H:i" }}</td>
+                        <td>{{ row.avg_duration }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Kayıt bulunamadı.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if data.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if data.has_previous %}
+        <li class="page-item">
+            <a class="page-link"
+                href="?page={{ data.previous_page_number }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+        </li>
+        {% endif %}
+
+        {% for i in data.paginator.page_range %}
+        {% if data.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% elif i > data.number|add:'-3' and i < data.number|add:'3' %} <li class="page-item"><a class="page-link"
+                href="?page={{ i }}&start_date={{ start_date }}&end_date={{ end_date }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if data.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ data.next_page_number }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                    aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;</span>
+            </li>
+            {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends 'reports/charts_base.html' %}
+
+{% block report_title %}Kuyruk & Kampanya Performansı{% endblock %}
+{% block report_subtitle %}Çağrıların kuyruklara göre dağılımı ve performans analizi.{% endblock %}
+
+{% block report_content %}
+<!-- Filters -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Başlangıç Tarihi</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Bitiş Tarihi</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-filter"></i> Filtrele
+                </button>
+                <button type="submit" name="export" value="true"
+                    class="btn btn-outline-secondary rounded-pill px-4 ms-2">
+                    <i class="bi bi-download"></i> Excel/CSV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Pie Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="card-title fw-bold text-primary mb-0">Çağrı Dağılımı (Kuyruk Bazlı)</h5>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="queuePieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="col-md-6 mb-4">
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="card bg-primary bg-opacity-10 border-0 p-3 h-100">
+                    <div class="card-body">
+                        <h6 class="text-primary text-uppercase small fw-bold mb-2">Toplam Kuyruk Sayısı</h6>
+                        <h2 class="display-4 fw-bold mb-0 text-dark">{{ data|length }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="card bg-success bg-opacity-10 border-0 p-3 h-100">
+                    <div class="card-body">
+                        <h6 class="text-success text-uppercase small fw-bold mb-2">En Yoğun Kuyruk</h6>
+                        {% if data %}
+                        <h3 class="fw-bold mb-0 text-dark">{{ data.0.name }}</h3>
+                        <p class="text-muted mb-0 small">{{ data.0.total_calls }} Çağrı ({{ data.0.percent }}%)</p>
+                        {% else %}
+                        <h3 class="fw-bold mb-0 text-dark">-</h3>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Kuyruk Adı</th>
+                        <th>Toplam Çağrı</th>
+                        <th>Hacim %</th>
+                        <th>Ort. Süre (AHT)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td class="ps-4 fw-bold">{{ row.name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ row.total_calls }}</span></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">{{ row.percent }}%</span>
+                                <div class="progress flex-grow-1" style="height: 6px; width: 80px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ row.percent }}%">
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ row.avg_aht }} sn</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">Veri bulunamadı.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var ctxSt = document.getElementById('queuePieChart').getContext('2d');
+        var queuePieChart = new Chart(ctxSt, {
+            type: 'doughnut',
+            data: {
+                labels: JSON.parse('{{ chart_labels|safe }}'),
+                datasets: [{
+                    data: JSON.parse('{{ chart_data|safe }}'),
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)',
+                        'rgba(255, 159, 64, 0.8)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

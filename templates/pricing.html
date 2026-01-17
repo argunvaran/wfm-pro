@@ -24,7 +24,7 @@
                 </ul>
             </div>
             <div class="card-footer bg-transparent border-0 text-center pb-4">
-                <a href="{% url 'init_payment' plan.id %}" class="btn btn-primary d-block">Şimdi Seç</a>
+                <a href="{% url 'register' %}?plan_id={{ plan.id }}" class="btn btn-primary d-block">Şimdi Seç</a>
             </div>
         </div>
     </div>

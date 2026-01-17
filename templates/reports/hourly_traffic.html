@@ -1,0 +1,110 @@
+{% extends 'reports/charts_base.html' %}
+
+{% block report_title %}Saatlik Yoğunluk Haritası{% endblock %}
+{% block report_subtitle %}Günün saatlerine göre çağrı yoğunluğu analizi.{% endblock %}
+
+{% block report_content %}
+<!-- Filters -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Başlangıç Tarihi</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Bitiş Tarihi</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-filter"></i> Filtrele
+                </button>
+                <button type="submit" name="export" value="true"
+                    class="btn btn-outline-secondary rounded-pill px-4 ms-2">
+                    <i class="bi bi-download"></i> Excel/CSV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Main Chart -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <h5 class="card-title fw-bold text-primary mb-0">Saatlik Çağrı Hacmi</h5>
+    </div>
+    <div class="card-body">
+        <div style="height: 350px;">
+            <canvas id="hourlyChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Heatmap Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <h5 class="card-title fw-bold text-dark mb-0">Yoğunluk Tablosu</h5>
+        <p class="text-muted small mb-0">Renk koyuluğu çağrı yoğunluğunu temsil eder.</p>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        {% for i in "0123"|make_list %} {# Simple columns just for layout structure #}
+                        <th>Zaman Dilimi</th>
+                        <th>Hacim</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {# Display in a 4-column grid layout for compactness #}
+                    {% for row in data %}
+                    {% if forloop.counter0|divisibleby:4 %}<tr>{% endif %}
+
+                        {# Heatmap Cell Logic #}
+                        <td class="bg-primary text-white"
+                            style="--bs-bg-opacity: {{ row.intensity|add:10|stringformat:'d' }}%; background-color: rgba(13, 110, 253, {{ row.intensity|add:20|stringformat:'d' }}0.01) !important; color: {% if row.intensity > 50 %}white{% else %}black{% endif %} !important;">
+
+                            <div class="d-flex justify-content-between align-items-center p-2">
+                                <span class="fw-bold small">{{ row.hour_label }}</span>
+                                <span class="badge bg-light text-dark rounded-pill">{{ row.total_calls }}</span>
+                            </div>
+                        </td>
+
+                        {% if forloop.counter|divisibleby:4 or forloop.last %}
+                    </tr>{% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var ctxH = document.getElementById('hourlyChart').getContext('2d');
+        var hourlyChart = new Chart(ctxH, {
+            type: 'bar',
+            data: {
+                labels: JSON.parse('{{ chart_hours|safe }}'),
+                datasets: [{
+                    label: 'Çağrı Sayısı',
+                    data: JSON.parse('{{ chart_calls|safe }}'),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

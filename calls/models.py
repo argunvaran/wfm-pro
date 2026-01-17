@@ -28,6 +28,7 @@ class Call(TenantAwareModel):
     duration = models.IntegerField(help_text="Duration in seconds")
     queue = models.ForeignKey(Queue, on_delete=models.SET_NULL, null=True, blank=True)
     agent = models.ForeignKey('agents.AgentProfile', on_delete=models.SET_NULL, null=True, blank=True)
+    customer_number = models.CharField(max_length=50, blank=True, null=True, help_text="Caller Phone Number")
     
     def __str__(self):
         return self.call_id

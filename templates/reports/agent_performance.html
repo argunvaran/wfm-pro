@@ -1,24 +1,62 @@
-{% extends 'base.html' %}
+{% extends 'reports/charts_base.html' %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Ajan Performans Raporu</h2>
-    <form class="d-flex gap-2">
-        <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
-        <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
-        <button type="submit" class="btn btn-primary">Filtrele</button>
-        <button type="submit" name="export" value="true" class="btn btn-success"><i
-                class="bi bi-file-earmark-excel"></i> Excel İndir</button>
-    </form>
+{% block report_title %}Agent Performans Raporu{% endblock %}
+{% block report_subtitle %}Agent bazlı çağrı hacimleri ve ortalama işlem süreleri.{% endblock %}
+
+{% block report_content %}
+<!-- Filters -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Başlangıç Tarihi</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Bitiş Tarihi</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-filter"></i> Filtrele
+                </button>
+                <button type="submit" name="export" value="true"
+                    class="btn btn-outline-secondary rounded-pill px-4 ms-2">
+                    <i class="bi bi-download"></i> Excel/CSV
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-transparent border-0 fw-bold">En Çok Çağrı Alanlar (Top 10)</div>
+            <div class="card-body">
+                <canvas id="callsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-transparent border-0 fw-bold">Ortalama İşlem Süresi (AHT)</div>
+            <div class="card-body">
+                <canvas id="ahtChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
                     <tr>
-                        <th>Ajan</th>
+                        <th class="ps-4">Agent</th>
                         <th>Toplam Çağrı</th>
                         <th>Ort. Süre (sn)</th>
                         <th>Vardiya Sayısı</th>
@@ -27,17 +65,14 @@
                 <tbody>
                     {% for row in data %}
                     <tr>
-                        <td>
-                            <div class="fw-bold">{{ row.agent.user.first_name }} {{ row.agent.user.last_name }}</div>
-                            <small class="text-muted">{{ row.agent.team.name|default:'-' }}</small>
-                        </td>
+                        <td class="ps-4 fw-bold text-primary">{{ row.agent.user.get_full_name }}</td>
                         <td>{{ row.total_calls }}</td>
                         <td>{{ row.avg_handling_time }}</td>
                         <td>{{ row.shift_count }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center py-4">Veri bulunamadı.</td>
+                        <td colspan="4" class="text-center py-4 text-muted">Veri bulunamadı.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -45,4 +80,46 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const labels = JSON.parse('{{ chart_labels|safe }}');
+    const callData = JSON.parse('{{ chart_calls|safe }}');
+    const ahtData = JSON.parse('{{ chart_aht|safe }}');
+
+    // Calls Chart
+    new Chart(document.getElementById('callsChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Toplam Çağrı',
+                data: callData,
+                backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                borderColor: 'rgba(99, 102, 241, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    // AHT Chart
+    new Chart(document.getElementById('ahtChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'AHT (Saniye)',
+                data: ahtData,
+                borderColor: 'rgba(168, 85, 247, 1)',
+                backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+</script>
 {% endblock %}
